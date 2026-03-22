@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/app/lib/firebase';
 import { Mail, Lock, ArrowRight, KeyRound, Loader2 } from 'lucide-react';
 import styles from './login.module.css';
@@ -15,6 +15,33 @@ const LoginPage: React.FC = () => {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Xử lý đăng nhập Social (Google/Facebook)
+    const handleSocialLogin = async (providerType: 'google' | 'facebook') => {
+        setError('');
+        const provider = providerType === 'google'
+            ? new GoogleAuthProvider()
+            : new FacebookAuthProvider();
+
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const idToken = await result.user.getIdToken();
+
+            // Gửi idToken lên server để tạo session (giống logic cũ của bạn)
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+            });
+
+            if (res.ok) {
+                setMessage(`Đăng nhập bằng ${providerType} thành công!`);
+                setTimeout(() => router.push('/'), 1500);
+            }
+        } catch (err: any) {
+            setError('Đăng nhập mạng xã hội thất bại. Vui lòng thử lại.');
+        }
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -22,11 +49,9 @@ const LoginPage: React.FC = () => {
         setLoading(true);
 
         try {
-            // Bước 1: Đăng nhập qua Firebase client để lấy idToken
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const idToken = await userCredential.user.getIdToken();
 
-            // Bước 2: Gửi idToken lên server để tạo session cookie
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -48,7 +73,6 @@ const LoginPage: React.FC = () => {
                 'auth/wrong-password': 'Mật khẩu không đúng',
                 'auth/invalid-email': 'Email không hợp lệ',
                 'auth/too-many-requests': 'Quá nhiều lần thử, vui lòng thử lại sau',
-                'auth/user-disabled': 'Tài khoản đã bị vô hiệu hóa',
             };
             setError(firebaseErrors[err.code] || 'Đăng nhập thất bại');
         } finally {
@@ -112,6 +136,31 @@ const LoginPage: React.FC = () => {
                         )}
                     </button>
                 </form>
+
+                {/* Phần đăng nhập bằng MXH */}
+                <div className={styles.divider}>
+                    <span>Hoặc đăng nhập bằng</span>
+                </div>
+
+                <div className={styles.socialGroup}>
+                    <button
+                        type="button"
+                        onClick={() => handleSocialLogin('google')}
+                        className={styles.socialButton}
+                    >
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+                        <span>Google</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => handleSocialLogin('facebook')}
+                        className={styles.socialButton}
+                    >
+                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" />
+                        <span>Facebook</span>
+                    </button>
+                </div>
 
                 <div className={styles.footer}>
                     <p>Bạn chưa có tài khoản? <Link href="/register">Bấm đăng ký</Link></p>
