@@ -14,4 +14,6 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+console.log('FIREBASE AUTH DOMAIN:', auth.config.authDomain);
+
 export { app, auth };

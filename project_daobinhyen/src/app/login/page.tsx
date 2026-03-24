@@ -1,6 +1,11 @@
 'use client'
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
+import {
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    FacebookAuthProvider,
+    signInWithPopup,
+} from 'firebase/auth';
 import { auth } from '@/app/lib/firebase';
 import { Mail, Lock, ArrowRight, KeyRound, Loader2 } from 'lucide-react';
 import styles from './login.module.css';
@@ -14,34 +19,59 @@ const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
 
-    // Xử lý đăng nhập Social (Google/Facebook)
+    // ─── Social login (popup) ─────────────────────────────────────────────────
     const handleSocialLogin = async (providerType: 'google' | 'facebook') => {
         setError('');
-        const provider = providerType === 'google'
-            ? new GoogleAuthProvider()
-            : new FacebookAuthProvider();
+        setMessage('');
+        setSocialLoading(providerType);
+
+        const provider =
+            providerType === 'google'
+                ? new GoogleAuthProvider()
+                : new FacebookAuthProvider();
+
+        if (providerType === 'facebook') {
+            (provider as FacebookAuthProvider).addScope('public_profile');
+        }
 
         try {
             const result = await signInWithPopup(auth, provider);
-            const idToken = await result.user.getIdToken();
+            console.log('POPUP RESULT:', result.user.email);
 
-            // Gửi idToken lên server để tạo session (giống logic cũ của bạn)
+            const idToken = await result.user.getIdToken();
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idToken }),
             });
 
+            const data = await res.json();
+            console.log('API STATUS:', res.status, data);
+
             if (res.ok) {
-                setMessage(`Đăng nhập bằng ${providerType} thành công!`);
+                setMessage('Đăng nhập thành công! Đang chuyển hướng...');
                 setTimeout(() => router.push('/'), 1500);
+            } else {
+                setError(data.error || 'Đăng nhập thất bại');
             }
         } catch (err: any) {
-            setError('Đăng nhập mạng xã hội thất bại. Vui lòng thử lại.');
+            console.log('POPUP ERROR:', err.code, err.message);
+            const msgs: Record<string, string> = {
+                'auth/popup-blocked': 'Trình duyệt chặn popup — hãy cho phép popup cho trang này',
+                'auth/popup-closed-by-user': 'Bạn đã đóng cửa sổ đăng nhập',
+                'auth/cancelled-popup-request': 'Yêu cầu đăng nhập đã bị huỷ',
+                'auth/account-exists-with-different-credential': 'Email đã đăng ký bằng phương thức khác',
+                'auth/user-cancelled': 'Bạn đã huỷ đăng nhập',
+            };
+            setError(msgs[err.code] || 'Đăng nhập thất bại');
+        } finally {
+            setSocialLoading(null);
         }
     };
 
+    // ─── Email / Password login ───────────────────────────────────────────────
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -80,6 +110,7 @@ const LoginPage: React.FC = () => {
         }
     };
 
+    // ─── UI ───────────────────────────────────────────────────────────────────
     return (
         <div className={styles.container}>
             <div className={styles.videoBackground}>
@@ -128,7 +159,7 @@ const LoginPage: React.FC = () => {
                         </Link>
                     </div>
 
-                    <button type="submit" className={styles.submitButton} disabled={loading}>
+                    <button type="submit" className={styles.submitButton} disabled={loading || !!socialLoading}>
                         {loading ? (
                             <><Loader2 className={styles.spinner} size={18} /> Đang xử lý...</>
                         ) : (
@@ -137,7 +168,6 @@ const LoginPage: React.FC = () => {
                     </button>
                 </form>
 
-                {/* Phần đăng nhập bằng MXH */}
                 <div className={styles.divider}>
                     <span>Hoặc đăng nhập bằng</span>
                 </div>
@@ -147,18 +177,28 @@ const LoginPage: React.FC = () => {
                         type="button"
                         onClick={() => handleSocialLogin('google')}
                         className={styles.socialButton}
+                        disabled={!!socialLoading || loading}
                     >
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
-                        <span>Google</span>
+                        {socialLoading === 'google' ? (
+                            <Loader2 className={styles.spinner} size={18} />
+                        ) : (
+                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+                        )}
+                        <span>{socialLoading === 'google' ? 'Đang xử lý...' : 'Google'}</span>
                     </button>
 
                     <button
                         type="button"
                         onClick={() => handleSocialLogin('facebook')}
                         className={styles.socialButton}
+                        disabled={!!socialLoading || loading}
                     >
-                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" />
-                        <span>Facebook</span>
+                        {socialLoading === 'facebook' ? (
+                            <Loader2 className={styles.spinner} size={18} />
+                        ) : (
+                            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" />
+                        )}
+                        <span>{socialLoading === 'facebook' ? 'Đang xử lý...' : 'Facebook'}</span>
                     </button>
                 </div>
 
