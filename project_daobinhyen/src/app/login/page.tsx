@@ -52,7 +52,7 @@ const LoginPage: React.FC = () => {
 
             if (res.ok) {
                 setMessage('Đăng nhập thành công! Đang chuyển hướng...');
-                setTimeout(() => router.push('/'), 1500);
+                setTimeout(() => router.push('/survey'), 1500);
             } else {
                 setError(data.error || 'Đăng nhập thất bại');
             }
@@ -92,7 +92,7 @@ const LoginPage: React.FC = () => {
 
             if (res.ok) {
                 setMessage('Đăng nhập thành công! Đang chuyển hướng...');
-                setTimeout(() => router.push('/'), 1500);
+                setTimeout(() => router.push('/survey'), 1500);
             } else {
                 setError(data.error || 'Đăng nhập thất bại');
             }
