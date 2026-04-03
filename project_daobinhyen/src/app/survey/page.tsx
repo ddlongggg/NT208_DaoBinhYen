@@ -4,240 +4,285 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-// Kịch bản trò chuyện
-const scenario = [
-  { id: 'start_1', speaker: 'Ông lão', text: 'Ô hô hô... Chào mừng con đã đặt chân đến Đảo Bình Yên. Ta là trưởng đảo ở đây.', next: 'start_2' },
-  { id: 'start_2', speaker: 'Ông lão', text: 'Nhìn mặt con có vẻ mang theo khá nhiều tâm sự từ thế giới ngoài kia nhỉ? Đừng lo, hòn đảo này được sinh ra là để dành cho con.', type: 'next_button', next_text: 'Dạ, con sẵn sàng!', next: 'intro_survey' },
-  { id: 'intro_survey', speaker: 'Ông lão', text: 'Nhưng mà này... Để ta biết hòn đảo có thể giúp con tốt nhất bằng cách nào, ta cần hỏi con một vài câu hỏi nhỏ. Con sẵn sàng chia sẻ với ta chứ?', type: 'next_button', next_text: 'Con luôn sẵn lòng ạ', next: 'question_1' },
-  { id: 'question_1', speaker: 'Ông lão', text: 'Hôm nay của con thế nào? Có chuyện gì vui buồn muốn kể ta nghe không? Cứ thoải mái nhé, ở đây chỉ có ta và những rặng cây thôi.', type: 'options', key: 'mood', options: [
-    { text: 'Hôm nay là một ngày tuyệt vời, con rất vui!', value: 'super_happy', next: 'question_2_happy' },
-    { text: 'Mọi thứ trôi qua bình yên, không có gì đặc biệt thưa ông.', value: 'calm', next: 'question_2_happy' },
-    { text: 'Con thấy hơi kiệt sức, năng lượng của con cạn cả rồi...', value: 'exhausted', next: 'question_2_sad' },
-    { text: 'Con đang buồn và áp lực quá, mọi thứ rối bời.', value: 'stressed', next: 'question_2_sad' }
-  ]},
-  { id: 'question_2_happy', speaker: 'Ông lão', text: 'Tuyệt vời lắm... Một ngày bình yên cũng là một ngày đáng quý. Vậy hiện tại, điều gì con đang quan tâm nhất?', type: 'options', key: 'cause', options: [
-    { text: 'Con muốn tìm một nơi nghỉ ngơi nạp lại năng lượng.', value: 'physical', next: 'question_3' },
-    { text: 'Con muốn tập trung hoàn thành nốt công việc, bài vở.', value: 'mental', next: 'question_3' },
-    { text: 'Con muốn tận hưởng cảm giác thư giãn này lâu hơn.', value: 'emotional', next: 'question_3' },
-    { text: 'Con chỉ muốn đi dạo khám phá hòn đảo thôi.', value: 'space', next: 'question_3' }
-  ]},
-  { id: 'question_2_sad', speaker: 'Ông lão', text: 'Ta hiểu... Cuộc sống ngoài kia hẳn là có nhiều lúc làm con chùn bước. Đừng lo, hãy chia sẻ với ta, điều gì đang khiến con bận lòng nhất?', type: 'options', key: 'cause', options: [
-    { text: 'Cơ thể con rã rời, con chỉ muốn được nghỉ ngơi thật sâu.', value: 'physical', next: 'question_3' },
-    { text: 'Đầu óc con căng thẳng vì deadline, công việc và bài vở.', value: 'mental', next: 'question_3' },
-    { text: 'Trái tim con đang tổn thương, con thấy cô đơn...', value: 'emotional', next: 'question_3' },
-    { text: 'Con không sao cả, con chỉ muốn tìm một nơi trốn thôi.', value: 'space', next: 'question_3' }
-  ]},
-  { id: 'question_3', speaker: 'Ông lão', text: 'Đảo Bình Yên có rất nhiều góc nhỏ diệu kỳ chờ con khám phá. Ngay lúc này, con muốn ta dẫn con đến nơi nào?', type: 'options', key: 'intent', options: [
-    { text: 'Con cần một góc tĩnh lặng để tập trung làm việc/học tập.', value: 'focus', next: 'question_4' },
-    { text: 'Con muốn thả lỏng, dọn dẹp lại tâm trí và nghe nhạc.', value: 'relax', next: 'question_4' },
-    { text: 'Con khó ngủ quá, ông ru con ngủ được không?', value: 'sleep', next: 'question_4' },
-    { text: 'Con muốn đọc những lời động viên để thấy yêu đời hơn.', value: 'healing', next: 'question_4' }
-  ]},
-  { id: 'question_4', speaker: 'Ông lão', text: 'Tuyệt lắm. Ta đã biết phải đưa con đi đâu rồi. Nhưng trước khi bước qua cánh cổng đảo, con thích âm thanh nào của thiên nhiên nhất để bầu bạn cùng mình?', type: 'options', key: 'soundFav', options: [
-    { text: 'Tiếng mưa rơi rầm rì ngoài hiên vắng.', value: 'rain', next: 'ending_1' },
-    { text: 'Tiếng sóng biển vỗ về bờ cát êm êm.', value: 'ocean', next: 'ending_1' },
-    { text: 'Tiếng chim hót và cành lá xạc xào trong rừng sâu.', value: 'forest', next: 'ending_1' },
-    { text: 'Tiếng củi cháy tí tách bên đống lửa trại ấm áp.', value: 'fire', next: 'ending_1' }
-  ]},
-  { id: 'ending_1', speaker: 'Ông lão', text: 'Ta đã hiểu được nỗi lòng của con rồi. Hãy để những cơn gió của Đảo Bình Yên cuốn trôi đi những mệt mỏi đó nhé.', next: 'ending_2' },
-  { id: 'ending_2', speaker: 'Ông lão', text: 'Bây giờ, hãy nhắm mắt lại hít một hơi thật sâu... Cánh cửa đảo đã mở. Chúc con có một khoảng thời gian thật bình yên.', type: 'next_button', next_text: 'Bắt đầu khám phá hòn đảo', action: 'finish' },
+interface Scene {
+  id: string; speaker: string; text: string; type?: string; next?: string;
+  next_text?: string; action?: string;
+  options?: { text: string; value?: string; weight?: number; next: string; }[];
+}
+
+const SCORE_LEVELS = [
+  { text: 'Rất tồi tệ', weight: 1 }, { text: 'Rất tệ', weight: 2 },
+  { text: 'Tệ', weight: 3 }, { text: 'Bình thường', weight: 4 },
+  { text: 'Tốt', weight: 5 }, { text: 'Rất tốt', weight: 6 }, { text: 'Tuyệt vời', weight: 7 },
+];
+
+const SURVEY_DATA = {
+  study: ["Khả năng tập trung vào bài vở hôm nay của con thế nào?", "Con có cảm thấy hứng thú với việc tiếp thu kiến thức mới không?", "Tiến độ hoàn thành công việc/deadline của con hiện tại ra sao?", "Khả năng ghi nhớ thông tin của con trong vài ngày qua thế nào?", "Con đánh giá sự ngăn nắp và kỷ luật bản thân lúc này thế nào?", "Môi trường xung quanh có đang ủng hộ việc học của con không?", "Con có cảm thấy đầu óc mình nhạy bén khi giải quyết vấn đề không?", "Sự kiên trì của con khi gặp bài toán khó hiện tại ra sao?", "Con có thấy mình quản lý thời gian hiệu quả không?", "Tổng quan năng suất học tập/làm việc của con hôm nay thế nào?"],
+  emotion: ["Hôm nay con cảm thấy cảm xúc chủ đạo của mình như thế nào?", "Con có cảm thấy yêu thương bản thân mình lúc này không?", "Sự bình tĩnh của con trước những tin tức tiêu cực ra sao?", "Con có cảm thấy kết nối được với những người xung quanh không?", "Mức độ lạc quan về tương lai của con hiện tại thế nào?", "Con thấy lòng mình có nhẹ nhàng, thanh thản không?", "Khả năng kiềm chế sự nóng giận của con hôm nay thế nào?", "Con có cảm thấy được thấu hiểu và sẻ chia không?", "Sự tự tin vào khả năng của chính mình hiện tại ra sao?", "Tổng quan trạng thái tinh thần của con lúc này thế nào?"],
+  sleep: ["Chất lượng giấc ngủ đêm qua của con thế nào?", "Con có cảm thấy dễ dàng chìm vào giấc ngủ không?", "Cảm giác của cơ thể con khi vừa thức dậy sáng nay ra sao?", "Con có thấy tâm trí mình yên tĩnh khi nằm xuống không?", "Mức độ tràn đầy năng lượng của cơ thể con lúc này thế nào?", "Con có thấy mình được nghỉ ngơi đầy đủ trong ngày không?", "Không gian nghỉ ngơi hiện tại có làm con thấy an tâm không?", "Khả năng thả lỏng các cơ bắp của con hiện tại thế nào?", "Con có hay gặp phải những giấc mơ mệt mỏi không?", "Tổng quan sự an yên trong tâm hồn con hôm nay thế nào?"]
+};
+
+const generateSurveyScenes = (type: 'study' | 'emotion' | 'sleep') => {
+  return SURVEY_DATA[type].map((q, index) => ({
+    id: `${type}_q${index + 1}`,
+    speaker: 'Trưởng đảo',
+    text: q,
+    type: 'options',
+    options: SCORE_LEVELS.map(level => ({
+      text: level.text,
+      weight: level.weight,
+      next: index === 9 ? 'calculating' : `${type}_q${index + 2}`
+    }))
+  }));
+};
+
+const baseScenario: Scene[] = [
+  { id: 'start_1', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: 'Ô hô hô... Chào mừng {name} đã đặt chân đến hòn Đảo Bình Yên.', next: 'start_2' },
+  { id: 'start_2', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: 'Ta xin giới thiệu bản thân 1 chút, ta là trưởng đảo ở đây.', next: 'start_3' },
+  { id: 'start_3', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: 'Ta hi vọng con có thể tìm được thứ con cần ở trên hòn đảo này. Con đã sẵn sàng chưa?', type: 'next_button', next_text: 'Dạ con sẵn sàng', next: 'intro_survey' },
+  { id: 'intro_survey', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: 'Nhưng mà này... ta có hơi nhiều chuyện 1 chút nhưng ta có thể hỏi là con đến đây với mục đích gì được không?', type: 'options', options: [{ text: 'Con đang gặp vấn đề về tập trung và học tập ạ', value: 'study', next: 'study_q1' }, { text: 'Con đang gặp vấn đề về mặt cảm xúc ạ', value: 'emotion', next: 'emotion_q1' }, { text: 'Con đang gặp vấn đề về sự an yên, giấc ngủ ạ', value: 'sleep', next: 'sleep_q1' }] },
+  ...generateSurveyScenes('study'), ...generateSurveyScenes('emotion'), ...generateSurveyScenes('sleep'),
+  { id: 'calculating', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: 'Đợi ta một chút nhé... Để ta xem tâm hồn con đang cần điều gì nhất...', next: 'final_result' },
+  { id: 'final_result', speaker: 'Trưởng đảo "LÂM QUANG MINH"', text: '{result_text}', type: 'next_button', next_text: 'Bắt đầu khám phá hòn đảo', action: 'finish' }
 ];
 
 export default function SurveyPage() {
   const router = useRouter();
-  
-  const [hasStarted, setHasStarted] = useState(false);
-  
+  const [stage, setStage] = useState('START');
+  const [userName, setUserName] = useState('');
   const [currentSceneId, setCurrentSceneId] = useState('start_1');
-  const [userProfile, setUserProfile] = useState<Record<string, string>>({}); 
-  
+  const [totalScore, setTotalScore] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
 
-  const hoverSoundRef = useRef<HTMLAudioElement | null>(null);
-  const selectSoundRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // --- AUDIO REFS ---
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
+  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  const currentScene = scenario.find(scene => scene.id === currentSceneId) || scenario[0];
+  const currentScene = baseScenario.find(s => s.id === currentSceneId) || baseScenario[0];
 
+  const introSentences = [
+    "Chào mừng bạn đến với Đảo Bình Yên",
+    "Tại sao bạn lại tìm đến hòn đảo này?",
+    "Bạn đang tìm kiếm sự bình yên?",
+    "Hay là đang tìm một không gian để học bài?",
+    "Hay một nơi để an ủi tâm hồn?",
+    "Bạn đừng lo dù bạn là ai và đang gặp vấn đề gì",
+    "Thì chúng tôi luôn sẵn sàng chào đón bạn",
+    "Hãy quên đi cuộc sống xô bồ ngoài kia",
+    "và tận hưởng thiên nhiên nơi đây",
+    "NHẤN ĐỂ TIẾP TỤC"
+  ];
+
+  const getResultText = (score: number) => {
+    if (score <= 25) return `Ta thấy lòng con đang trĩu nặng quá. Đừng cố quá sức nhé, hãy để hòn đảo này ôm lấy con.`;
+    if (score <= 45) return `Mọi thứ hơi xáo trộn một chút đúng không? Đừng lo, ta sẽ dẫn con đến nơi yên bình nhất.`;
+    if (score <= 60) return `Con đang làm rất tốt! Hòn đảo này sẽ giúp con duy trì nguồn năng lượng tích cực này.`;
+    return `Tuyệt vời! Tâm hồn con rạng rỡ như ánh nắng trên đảo vậy. Hãy tận hưởng nhé!`;
+  };
+
+  // --- LOGIC GÕ CHỮ + TIẾNG CẠCH CẠCH ---
   useEffect(() => {
-    if (!hasStarted) return; 
+    if (stage !== 'SURVEY') return;
 
-    let currentText = currentScene.text;
+    let rawText = currentScene.text.replace('{name}', userName);
+    if (currentScene.id === 'final_result') rawText = getResultText(totalScore);
+
     let index = 0;
-    
     setDisplayedText('');
     setIsTyping(true);
 
-    if (typingSoundRef.current) {
-      typingSoundRef.current.currentTime = 0;
-      typingSoundRef.current.loop = true;
-      typingSoundRef.current.play().catch(e => console.log("Audio play error:", e));
-    }
-
     const interval = setInterval(() => {
+      // 1. Cập nhật chữ
       index++;
-      setDisplayedText(currentText.slice(0, index));
+      const currentTextSlice = rawText.slice(0, index);
+      setDisplayedText(currentTextSlice);
 
-      if (index >= currentText.length) {
-        clearInterval(interval);
-        setIsTyping(false);
-        if (typingSoundRef.current) {
-          typingSoundRef.current.pause();
+      // 2. Xử lý âm thanh
+      const sound = typingSoundRef.current;
+      if (sound) {
+        // Nếu đã gõ đến chữ cuối cùng, ngắt âm thanh ngay lập tức và xóa interval
+        if (index >= rawText.length) {
+          clearInterval(interval);
+          setIsTyping(false);
+          sound.pause();
+          sound.currentTime = 0;
+          return; // Thoát hàm để không chạy đoạn play bên dưới
+        }
+
+        // Phát tiếng cạch cho các chữ cái (tránh khoảng trắng)
+        if (rawText[index - 1] !== ' ') {
+          sound.pause();
+          sound.currentTime = 0;
+          sound.volume = 0.2;
+          sound.play().catch(() => { });
+
+          // Giới hạn thời gian kêu của mỗi tiếng cạch (ví dụ 60ms)
+          setTimeout(() => {
+            sound.pause();
+          }, 60);
         }
       }
-    }, 35); 
+    }, 50); // Tốc độ gõ 50ms
 
     return () => {
       clearInterval(interval);
       if (typingSoundRef.current) {
         typingSoundRef.current.pause();
+        typingSoundRef.current.currentTime = 0;
       }
     };
-  }, [currentScene, hasStarted]);
+  }, [currentSceneId, stage]);
 
-  const playHoverSound = () => {
-    if (hoverSoundRef.current) hoverSoundRef.current.currentTime = 0;
-    hoverSoundRef.current?.play().catch(() => {});
-  };
+  // Logic Intro
+  useEffect(() => {
+    if (stage !== 'START' || sentenceIndex === introSentences.length - 1) return;
+    const timer = setTimeout(() => {
+      setIsFading(true);
+      setTimeout(() => { setSentenceIndex(prev => prev + 1); setIsFading(false); }, 600);
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, [sentenceIndex, stage]);
 
-  const playSelectSound = () => {
-    if (selectSoundRef.current) selectSoundRef.current.currentTime = 0;
-    selectSoundRef.current?.play().catch(() => {});
-  };
-
-  const handleNext = (nextId: string, value?: string, key?: string) => {
-    playSelectSound();
-    if (key && value) {
-      setUserProfile(prev => ({ ...prev, [key]: value }));
+  // --- HÀM PHÁT TIẾNG CLICK ---
+  const playClickSound = () => {
+    if (clickSoundRef.current) {
+      clickSoundRef.current.currentTime = 0;
+      clickSoundRef.current.play().catch(() => { });
     }
-    
-    // Báo cho React biết là chuẩn bị chạy chữ luôn để giấu các nút đi
-    setIsTyping(true);    
-    setDisplayedText(''); 
+  };
 
+  const handleNext = (nextId: string, weight?: number) => {
+    playClickSound(); // Kêu "tách" khi chuyển
+    if (weight) setTotalScore(prev => prev + weight);
+    setDisplayedText('');
+    setIsTyping(true);
     setCurrentSceneId(nextId);
   };
 
-  const finishSurvey = () => {
-    playSelectSound();
-    const finalProfile = { ...userProfile, lastVisit: new Date().toISOString() };
-    localStorage.setItem('daoBinhYen_UserProfile', JSON.stringify(finalProfile));
-    router.push('/home'); 
-  };
-
   const handleBoxClick = () => {
-    if (isTyping) {
-      return; 
-    }
-    if (!currentScene.type && currentScene.next) {
+    if (!isTyping && !currentScene.type && currentScene.next) {
       handleNext(currentScene.next as string);
     }
   };
 
-  if (!hasStarted) {
+  const finishSurvey = () => {
+    playClickSound();
+    localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
+    router.push('/homepage');
+  };
+
+  // --- RENDERING ---
+
+  if (stage === 'START') {
     return (
-      <div 
-        className="flex items-center justify-center w-full h-screen bg-black cursor-pointer"
-        onClick={() => setHasStarted(true)}
-      >
-        <p className="text-white text-xl animate-pulse">Nhấp chuột vào màn hình để bắt đầu...</p>
+      <div className="flex items-center justify-center w-full h-screen bg-[#0a0a0a] cursor-pointer text-center p-6 font-sans"
+        onClick={() => {
+          playClickSound();
+          if (sentenceIndex === introSentences.length - 1) setStage('INTRO');
+        }}>
+        <p className={`text-white text-2xl md:text-3xl tracking-wider transition-all duration-1000 uppercase ${isFading ? 'opacity-0' : 'opacity-100'}`}>
+          {introSentences[sentenceIndex]}
+        </p>
+      </div>
+    );
+  }
+
+  if (stage === 'INTRO' || stage === 'NAME_INPUT') {
+    return (
+      <div className="fixed inset-0 bg-black z-[100] overflow-hidden font-sans">
+        <video ref={videoRef} src="/intro.mp4" autoPlay muted playsInline className="w-full h-full object-cover opacity-80" onEnded={() => setStage('NAME_INPUT')} />
+        {stage === 'NAME_INPUT' && (
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
+            <div className="flex flex-col md:flex-row items-center gap-12 max-w-5xl w-full animate-in fade-in duration-700">
+              <div className="relative w-[240px] h-[360px] md:w-[380px] md:h-[550px] animate-float">
+                <Image src="/oldman.png" alt="Elder" fill className="object-contain" priority />
+              </div>
+              <form onSubmit={(e) => { e.preventDefault(); playClickSound(); setStage('SURVEY') }}
+                className="bg-[#fdfbf7] p-10 rounded-[2rem] border-4 border-[#d2c4a7] shadow-2xl max-w-md w-full">
+                <h2 className="text-[#4a4036] text-3xl font-extrabold mb-2 tracking-tight">WELCOME!</h2>
+                <p className="text-[#8c7d6c] mb-8 font-medium leading-relaxed uppercase text-xs tracking-widest">Hãy cho ta biết danh xưng của con nhé!</p>
+                <input autoFocus value={userName} onChange={(e) => setUserName(e.target.value)} required placeholder="Nhập tên của bạn..."
+                  className="w-full bg-transparent border-b-2 border-[#d2c4a7] py-3 text-2xl text-[#4a4036] font-bold outline-none focus:border-[#8c7d6c] mb-10 placeholder:font-normal placeholder:text-gray-300" />
+                <button type="submit" className="w-full py-5 bg-[#6c7a65] text-white rounded-2xl font-black text-lg shadow-lg hover:scale-105 transition-all">BẮT ĐẦU</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div 
-      className="relative w-full h-screen bg-cover bg-center font-sans" 
-      style={{ backgroundImage: "url('/islandblur.png')" }} 
-    >
-      <div className="absolute inset-0 bg-black/40 z-0"></div>
+    <div className="relative w-full h-screen bg-[#1a1a1a] font-sans overflow-hidden">
+      {/* THẺ AUDIO ẨN */}
+      <audio ref={typingSoundRef} src="/typing.wav" preload="auto" />
+      <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
 
-      <audio ref={hoverSoundRef} src="/hover.wav" preload="auto"></audio>
-      <audio ref={selectSoundRef} src="/select.wav" preload="auto"></audio>
-      <audio ref={typingSoundRef} src="/typing.wav" preload="auto"></audio>
+      <div className="absolute inset-0 bg-cover bg-center animate-ken-burns" style={{ backgroundImage: "url('/Island8.0.jpg')" }}></div>
+      <div className="absolute inset-0 bg-black/30"></div>
 
-      {/* NHÂN VẬT ÔNG LÃO - Đã dời sang trái */}
-      <div className="fixed bottom-[35%] left-[5%] md:left-[10%] w-[280px] h-[450px] md:w-[350px] md:h-[550px] z-10 pointer-events-none opacity-95">        
-        
-        {/* --- ANIMATION DẤU BA CHẤM KHI ĐANG TYPING --- */}
-        {isTyping && (
-          <div className="absolute top-[10%] md:top-[30%] right-[30%] bg-[#fdfbf7]/95 border-[2px] border-[#d2c4a7] rounded-3xl px-4 py-3 shadow-md flex items-center justify-center gap-1.5 z-20 transition-all duration-300">
-            <div className="w-2.5 h-2.5 bg-[#8c7d6c] rounded-full animate-[bounce_1s_infinite_0ms]"></div>
-            <div className="w-2.5 h-2.5 bg-[#8c7d6c] rounded-full animate-[bounce_1s_infinite_200ms]"></div>
-            <div className="w-2.5 h-2.5 bg-[#8c7d6c] rounded-full animate-[bounce_1s_infinite_400ms]"></div>
-            {/* Đuôi của bong bóng chat (chỉa xuống ông lão) */}
-            <div className="absolute -bottom-2 right-[20%] w-3.5 h-3.5 bg-[#fdfbf7] border-b-[2px] border-r-[2px] border-[#d2c4a7] transform rotate-45"></div>
-          </div>
-        )}
-        {/* ------------------------------------------- */}
-
-        <Image 
-          src="/oldman.png" 
-          alt="Trưởng đảo" 
-          fill
-          style={{ objectFit: 'contain', objectPosition: 'bottom' }}
-          priority
-        />
+      {/* 1. NHÂN VẬT */}
+      <div className="fixed bottom-[15%] left-[5%] md:left-[8%] w-[260px] h-[400px] md:w-[420px] md:h-[620px] z-10 pointer-events-none animate-float drop-shadow-2xl">
+        <Image src="/oldman.png" alt="Elder" fill className="object-contain object-bottom" priority />
       </div>
 
-      {/* NÚT LỰA CHỌN - Đã dời sang phải */}
-      {!isTyping && currentScene.type === 'options' && currentScene.options && (
-      <div className="fixed top-[30%] right-[5%] md:right-[10%] z-50">
-        <div className="w-[85vw] max-w-[450px] flex flex-col gap-3">
-          {currentScene.options.map((option, index) => (
-            <button
-              key={index}
-              className="w-full text-center py-3 px-5 bg-[#fdfbf7]/95 backdrop-blur-md border-[2px] border-[#c1b5a0] rounded-xl hover:bg-[#e6ddcf] hover:scale-[1.02] text-[#4a4036] font-medium transition-all duration-200 shadow-lg text-[15px]"
-              onMouseEnter={playHoverSound}
-              onClick={() => handleNext(option.next, option.value, currentScene.key)}
-            >
-              {option.text}
-            </button>
-          ))}
-        </div>
-      </div>
-    )}
-
-      {/* NÚT TIẾP TỤC - Cũng dời sang phải cho đồng bộ */}
-      {!isTyping && currentScene.type === 'next_button' && (
-        <div className="fixed top-[50%] right-[5%] md:right-[10%] z-50">
-          <div className="w-[85vw] max-w-[350px]">
-            <button 
-              onClick={currentScene.action === 'finish' ? finishSurvey : () => handleNext(currentScene.next as string)}
-              className="w-full text-center py-3 px-5 bg-[#6c7a65]/95 backdrop-blur-md border-[2px] border-[#525e4c] text-white rounded-xl hover:bg-[#525e4c] hover:scale-[1.02] font-semibold transition-all duration-200 shadow-xl text-[15px]"
-              onMouseEnter={playHoverSound}
-            >
-              {currentScene.next_text}
-            </button>
+      {/* 2. CÂU TRẢ LỜI */}
+      {!isTyping && currentScene.type === 'options' && (
+        <div className="fixed inset-0 flex items-start justify-center md:justify-end md:pr-[10%] z-40 pointer-events-none pt-[5vh] md:pt-[10vh]">
+          <div className="flex flex-col gap-2 w-[90%] max-w-[400px] pointer-events-auto animate-in fade-in slide-in-from-top-10 duration-500 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
+            {currentScene.options?.map((opt: any, i: number) => (
+              <button key={i} onClick={() => handleNext(opt.next, opt.weight)}
+                className="group relative w-full py-3 px-6 bg-[#fdfbf7]/95 border-2 border-[#d2c4a7] rounded-xl text-[#4a4036] font-bold text-base shadow-lg hover:bg-[#6c7a65] hover:text-white transition-all text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#8c7d6c] group-hover:bg-white shrink-0"></div>
+                  <span className="leading-tight">{opt.text}</span>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      {/* HỘP THOẠI CHÍNH */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[95%] md:w-[750px] z-20">
-        <div 
-          className="relative p-5 md:p-6 bg-[#fdfbf7]/95 backdrop-blur-md border-[3px] border-[#d2c4a7] text-[#4a4036] rounded-2xl shadow-2xl min-h-[140px] md:min-h-[160px] cursor-pointer"
-          onClick={handleBoxClick}
-        >
-          {/* Tên Nhân Vật */}
-          <div className="absolute -top-5 left-8 px-5 py-1.5 bg-[#8c7d6c] border-[2px] border-[#d2c4a7] text-[#fdfbf7] font-bold text-md rounded-xl shadow-md">
+      {/* 3. NÚT TIẾP TỤC */}
+      {!isTyping && currentScene.type === 'next_button' && (
+        <div className="fixed inset-0 flex items-center justify-center md:justify-end md:pr-[15%] z-50 pointer-events-none">
+          <button onClick={() => (currentScene as any).action === 'finish' ? finishSurvey() : handleNext(currentScene.next!)}
+            className="pointer-events-auto px-12 py-5 bg-[#6c7a65] text-white text-xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-all flex items-center gap-3">
+            {currentScene.next_text} <span>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* 4. HỘP THOẠI */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[95%] max-w-[950px] z-50">
+        <div className="relative p-8 md:p-10 bg-[#fdfbf7] border-[4px] border-[#d2c4a7] text-[#4a4036] rounded-[2.5rem] shadow-2xl min-h-[160px] cursor-pointer"
+          onClick={handleBoxClick}>
+          <div className="absolute -top-5 left-10 px-6 py-2 bg-[#8c7d6c] text-white font-black text-sm rounded-xl shadow-md uppercase">
             {currentScene.speaker}
           </div>
-
-          {/* Lời thoại */}
-          <p className="mt-3 text-[16px] md:text-[18px] leading-relaxed whitespace-pre-line font-medium">
+          <p className="text-[20px] md:text-[24px] leading-[1.6] font-bold text-[#3d342c] text-center md:text-left antialiased">
             {displayedText}
+            {isTyping && <span className="inline-block w-2 h-6 bg-[#8c7d6c] ml-1 animate-pulse"></span>}
           </p>
-
           {!isTyping && !currentScene.type && currentScene.next && (
-            <div className="absolute bottom-3 right-5 text-[#8c7d6c] text-[18px] animate-bounce">
-              ▼
-            </div>
+            <div className="absolute bottom-4 right-8 text-2xl animate-bounce text-[#8c7d6c]">▼</div>
           )}
         </div>
       </div>
 
+      <style jsx global>{`
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        @keyframes ken-burns { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+        .animate-float { animation: float 5s ease-in-out infinite; }
+        .animate-ken-burns { animation: ken-burns 15s linear infinite alternate; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d2c4a7; border-radius: 10px; }
+      `}</style>
     </div>
   );
 }
