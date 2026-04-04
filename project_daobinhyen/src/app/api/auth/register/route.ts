@@ -42,22 +42,32 @@ export async function POST(req: NextRequest) {
     console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅' : '❌');
 
     const info = await transporter.sendMail({
-      from: `"Đảo Bình Yên" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: '🌴 Xác minh tài khoản Đảo Bình Yên',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: #f9f7f4; border-radius: 16px;">
-          <h2 style="color: #4a4036; text-align: center;">🌴 Chào mừng đến Đảo Bình Yên!</h2>
-          <p style="color: #6c5f52;">Hãy nhấn nút bên dưới để xác minh email.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}"
-               style="background: #6c7a65; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
-              ✅ Xác minh Email
-            </a>
-          </div>
-        </div>
-      `,
-    });
+  from: `"Đảo Bình Yên" <${process.env.GMAIL_USER}>`,
+  to: email,
+  // Cập nhật lại tiêu đề cho đồng bộ với nội dung mới
+  subject: '🌴 Chạm tay vào bình yên: Xác minh tài khoản của bạn',
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 30px; background: #f9f7f4; border-radius: 20px; text-align: center;">
+      <h2 style="color: #4a4036; margin-bottom: 20px;">🌴 Chào mừng bạn đến với Đảo Bình Yên!</h2>
+      
+      <p style="color: #6c5f52; line-height: 1.6; font-size: 15px; text-align: left;">
+        Bạn vừa thực hiện bước đầu tiên để tìm thấy khoảng lặng cho riêng mình. 
+        Để cánh cửa đảo nhỏ chính thức mở ra, bạn vui lòng nhấn vào nút bên dưới để xác nhận địa chỉ email nhé.
+      </p>
+
+      <div style="margin: 35px 0;">
+        <a href="${verificationLink}" 
+           style="background: #6c7a65; color: white; padding: 16px 32px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
+           ✅ Xác minh Email & Bắt đầu thư giãn
+        </a>
+      </div>
+
+      <p style="color: #8d7e6d; font-style: italic; margin-top: 25px; font-size: 14px;">
+        Hẹn gặp bạn giữa những thanh âm trong lành của Đảo.
+      </p>
+    </div>
+  `,
+});
 
     console.log('✅ MAIL SENT:', info.messageId);
 
