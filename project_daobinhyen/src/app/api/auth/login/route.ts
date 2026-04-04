@@ -30,8 +30,6 @@ if (isEmailProvider && !decodedToken.email_verified) {
                 await userRef.set({
                     uid: decodedToken.uid,
                     email: decodedToken.email || null,
-                    name: decodedToken.name || null,
-                    avatar: decodedToken.picture || null,
                     provider: decodedToken.firebase.sign_in_provider,
                     createdAt: new Date().toISOString(),
                     lastLogin: new Date().toISOString(),
