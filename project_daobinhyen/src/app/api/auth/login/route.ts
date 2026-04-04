@@ -12,6 +12,15 @@ export async function POST(req: NextRequest) {
         const decodedToken = await auth.verifyIdToken(idToken);
         console.log('DECODED TOKEN:', decodedToken.uid, decodedToken.email);
 
+        // Chỉ check verify với email/password, bỏ qua Google/Facebook
+const isEmailProvider = decodedToken.firebase.sign_in_provider === 'password';
+if (isEmailProvider && !decodedToken.email_verified) {
+    return NextResponse.json({
+        error: 'Vui lòng xác minh email trước khi đăng nhập'
+    }, { status: 403 });
+}
+
+
         try {
             const userRef = db.collection('users').doc(decodedToken.uid);
             const userSnap = await userRef.get();
