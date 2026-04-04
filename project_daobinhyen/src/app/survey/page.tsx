@@ -48,8 +48,11 @@ const baseScenario: Scene[] = [
 
 export default function SurveyPage() {
   const router = useRouter();
-  const [stage, setStage] = useState('START');
+
+  const [stage, setStage] = useState('CHECKING');
   const [userName, setUserName] = useState('');
+  const [usernameError, setUsernameError] = useState(''); // 🆕 lỗi trùng tên
+  const [usernameLoading, setUsernameLoading] = useState(false); // 🆕 loading khi check
   const [currentSceneId, setCurrentSceneId] = useState('start_1');
   const [totalScore, setTotalScore] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -58,8 +61,6 @@ export default function SurveyPage() {
   const [isFading, setIsFading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  // --- AUDIO REFS ---
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
 
@@ -85,7 +86,35 @@ export default function SurveyPage() {
     return `Tuyệt vời! Tâm hồn con rạng rỡ như ánh nắng trên đảo vậy. Hãy tận hưởng nhé!`;
   };
 
-  // --- LOGIC GÕ CHỮ + TIẾNG CẠCH CẠCH ---
+  // CHECK USER KHI VÀO TRANG — PHÂN NHÁNH 3 LUỒNG
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch('/api/user/getUserInFo');
+        if (!res.ok) {
+          router.replace('/login');
+          return;
+        }
+        const data = await res.json();
+        const hasUsername = !!data.username;
+        const hasSurvey = data.lastSurveyScore !== null && data.lastSurveyType !== null;
+
+        if (!hasUsername) {
+          setStage('START');
+        } else if (!hasSurvey) {
+          setUserName(data.username);
+          setStage('INTRO');
+        } else {
+          router.replace('/emotion-check');
+        }
+      } catch {
+        setStage('START');
+      }
+    };
+    checkUser();
+  }, []);
+
+  // LOGIC GÕ CHỮ
   useEffect(() => {
     if (stage !== 'SURVEY') return;
 
@@ -97,37 +126,26 @@ export default function SurveyPage() {
     setIsTyping(true);
 
     const interval = setInterval(() => {
-      // 1. Cập nhật chữ
       index++;
-      const currentTextSlice = rawText.slice(0, index);
-      setDisplayedText(currentTextSlice);
-
-      // 2. Xử lý âm thanh
+      setDisplayedText(rawText.slice(0, index));
       const sound = typingSoundRef.current;
       if (sound) {
-        // Nếu đã gõ đến chữ cuối cùng, ngắt âm thanh ngay lập tức và xóa interval
         if (index >= rawText.length) {
           clearInterval(interval);
           setIsTyping(false);
           sound.pause();
           sound.currentTime = 0;
-          return; // Thoát hàm để không chạy đoạn play bên dưới
+          return;
         }
-
-        // Phát tiếng cạch cho các chữ cái (tránh khoảng trắng)
         if (rawText[index - 1] !== ' ') {
           sound.pause();
           sound.currentTime = 0;
           sound.volume = 0.2;
           sound.play().catch(() => { });
-
-          // Giới hạn thời gian kêu của mỗi tiếng cạch (ví dụ 60ms)
-          setTimeout(() => {
-            sound.pause();
-          }, 60);
+          setTimeout(() => { sound.pause(); }, 60);
         }
       }
-    }, 50); // Tốc độ gõ 50ms
+    }, 50);
 
     return () => {
       clearInterval(interval);
@@ -138,7 +156,7 @@ export default function SurveyPage() {
     };
   }, [currentSceneId, stage]);
 
-  // Logic Intro
+  // Logic Intro sentences
   useEffect(() => {
     if (stage !== 'START' || sentenceIndex === introSentences.length - 1) return;
     const timer = setTimeout(() => {
@@ -148,7 +166,6 @@ export default function SurveyPage() {
     return () => clearTimeout(timer);
   }, [sentenceIndex, stage]);
 
-  // --- HÀM PHÁT TIẾNG CLICK ---
   const playClickSound = () => {
     if (clickSoundRef.current) {
       clickSoundRef.current.currentTime = 0;
@@ -157,7 +174,7 @@ export default function SurveyPage() {
   };
 
   const handleNext = (nextId: string, weight?: number) => {
-    playClickSound(); // Kêu "tách" khi chuyển
+    playClickSound();
     if (weight) setTotalScore(prev => prev + weight);
     setDisplayedText('');
     setIsTyping(true);
@@ -170,21 +187,67 @@ export default function SurveyPage() {
     }
   };
 
+  // 🆕 Submit username với check trùng tên
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClickSound();
+    setUsernameError('');
+    setUsernameLoading(true);
+
+    try {
+      const res = await fetch('/api/user/updateusername', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: userName }),
+      });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        setUsernameError(data.error || 'Tên này đã được dùng, hãy chọn tên khác!');
+        return; // Không chuyển stage
+      }
+
+      setStage('SURVEY'); // Tên OK → vào survey
+    } catch {
+      setUsernameError('Lỗi kết nối, thử lại nhé!');
+    } finally {
+      setUsernameLoading(false);
+    }
+  };
+
   const finishSurvey = () => {
     playClickSound();
+    fetch('/api/user/updateusername', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        score: totalScore,
+        surveyType: currentScene.id.split('_')[0],
+      }),
+    });
     localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
     router.push('/homepage');
   };
 
   // --- RENDERING ---
 
+  if (stage === 'CHECKING') {
+    return (
+      <div className="flex items-center justify-center w-full h-screen bg-[#0a0a0a]">
+        <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (stage === 'START') {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-[#0a0a0a] cursor-pointer text-center p-6 font-sans"
+      <div
+        className="flex items-center justify-center w-full h-screen bg-[#0a0a0a] cursor-pointer text-center p-6 font-sans"
         onClick={() => {
           playClickSound();
           if (sentenceIndex === introSentences.length - 1) setStage('INTRO');
-        }}>
+        }}
+      >
         <p className={`text-white text-2xl md:text-3xl tracking-wider transition-all duration-1000 uppercase ${isFading ? 'opacity-0' : 'opacity-100'}`}>
           {introSentences[sentenceIndex]}
         </p>
@@ -195,20 +258,51 @@ export default function SurveyPage() {
   if (stage === 'INTRO' || stage === 'NAME_INPUT') {
     return (
       <div className="fixed inset-0 bg-black z-[100] overflow-hidden font-sans">
-        <video ref={videoRef} src="/intro.mp4" autoPlay muted playsInline className="w-full h-full object-cover opacity-80" onEnded={() => setStage('NAME_INPUT')} />
+        <video
+          ref={videoRef}
+          src="/intro.mp4"
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-full object-cover opacity-80"
+          onEnded={() => setStage('NAME_INPUT')}
+        />
         {stage === 'NAME_INPUT' && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
             <div className="flex flex-col md:flex-row items-center gap-12 max-w-5xl w-full animate-in fade-in duration-700">
               <div className="relative w-[240px] h-[360px] md:w-[380px] md:h-[550px] animate-float">
                 <Image src="/oldman.png" alt="Elder" fill className="object-contain" priority />
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); playClickSound(); setStage('SURVEY') }}
-                className="bg-[#fdfbf7] p-10 rounded-[2rem] border-4 border-[#d2c4a7] shadow-2xl max-w-md w-full">
+              <form
+                onSubmit={handleUsernameSubmit}
+                className="bg-[#fdfbf7] p-10 rounded-[2rem] border-4 border-[#d2c4a7] shadow-2xl max-w-md w-full"
+              >
                 <h2 className="text-[#4a4036] text-3xl font-extrabold mb-2 tracking-tight">WELCOME!</h2>
                 <p className="text-[#8c7d6c] mb-8 font-medium leading-relaxed uppercase text-xs tracking-widest">Hãy cho ta biết danh xưng của con nhé!</p>
-                <input autoFocus value={userName} onChange={(e) => setUserName(e.target.value)} required placeholder="Nhập tên của bạn..."
-                  className="w-full bg-transparent border-b-2 border-[#d2c4a7] py-3 text-2xl text-[#4a4036] font-bold outline-none focus:border-[#8c7d6c] mb-10 placeholder:font-normal placeholder:text-gray-300" />
-                <button type="submit" className="w-full py-5 bg-[#6c7a65] text-white rounded-2xl font-black text-lg shadow-lg hover:scale-105 transition-all">BẮT ĐẦU</button>
+                <input
+                  autoFocus
+                  value={userName}
+                  onChange={(e) => {
+                    setUserName(e.target.value);
+                    setUsernameError(''); // Xóa lỗi khi user gõ lại
+                  }}
+                  required
+                  placeholder="Nhập tên của bạn..."
+                  className={`w-full bg-transparent border-b-2 py-3 text-2xl text-[#4a4036] font-bold outline-none mb-2 placeholder:font-normal placeholder:text-gray-300 transition-colors
+                    ${usernameError ? 'border-red-400 focus:border-red-500' : 'border-[#d2c4a7] focus:border-[#8c7d6c]'}`}
+                />
+                {/* 🆕 Hiển thị lỗi trùng tên */}
+                {usernameError && (
+                  <p className="text-red-500 text-sm mb-4 font-medium">⚠️ {usernameError}</p>
+                )}
+                <div className="mb-10" />
+                <button
+                  type="submit"
+                  disabled={usernameLoading}
+                  className="w-full py-5 bg-[#6c7a65] text-white rounded-2xl font-black text-lg shadow-lg hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {usernameLoading ? 'Đang kiểm tra...' : 'BẮT ĐẦU'}
+                </button>
               </form>
             </div>
           </div>
@@ -219,7 +313,6 @@ export default function SurveyPage() {
 
   return (
     <div className="relative w-full h-screen bg-[#1a1a1a] font-sans overflow-hidden">
-      {/* THẺ AUDIO ẨN */}
       <audio ref={typingSoundRef} src="/typing.wav" preload="auto" />
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
 
@@ -236,8 +329,11 @@ export default function SurveyPage() {
         <div className="fixed inset-0 flex items-start justify-center md:justify-end md:pr-[10%] z-40 pointer-events-none pt-[5vh] md:pt-[10vh]">
           <div className="flex flex-col gap-2 w-[90%] max-w-[400px] pointer-events-auto animate-in fade-in slide-in-from-top-10 duration-500 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
             {currentScene.options?.map((opt: any, i: number) => (
-              <button key={i} onClick={() => handleNext(opt.next, opt.weight)}
-                className="group relative w-full py-3 px-6 bg-[#fdfbf7]/95 border-2 border-[#d2c4a7] rounded-xl text-[#4a4036] font-bold text-base shadow-lg hover:bg-[#6c7a65] hover:text-white transition-all text-left">
+              <button
+                key={i}
+                onClick={() => handleNext(opt.next, opt.weight)}
+                className="group relative w-full py-3 px-6 bg-[#fdfbf7]/95 border-2 border-[#d2c4a7] rounded-xl text-[#4a4036] font-bold text-base shadow-lg hover:bg-[#6c7a65] hover:text-white transition-all text-left"
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-[#8c7d6c] group-hover:bg-white shrink-0"></div>
                   <span className="leading-tight">{opt.text}</span>
@@ -251,8 +347,10 @@ export default function SurveyPage() {
       {/* 3. NÚT TIẾP TỤC */}
       {!isTyping && currentScene.type === 'next_button' && (
         <div className="fixed inset-0 flex items-center justify-center md:justify-end md:pr-[15%] z-50 pointer-events-none">
-          <button onClick={() => (currentScene as any).action === 'finish' ? finishSurvey() : handleNext(currentScene.next!)}
-            className="pointer-events-auto px-12 py-5 bg-[#6c7a65] text-white text-xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-all flex items-center gap-3">
+          <button
+            onClick={() => (currentScene as any).action === 'finish' ? finishSurvey() : handleNext(currentScene.next!)}
+            className="pointer-events-auto px-12 py-5 bg-[#6c7a65] text-white text-xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-all flex items-center gap-3"
+          >
             {currentScene.next_text} <span>→</span>
           </button>
         </div>
@@ -260,8 +358,10 @@ export default function SurveyPage() {
 
       {/* 4. HỘP THOẠI */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[95%] max-w-[950px] z-50">
-        <div className="relative p-8 md:p-10 bg-[#fdfbf7] border-[4px] border-[#d2c4a7] text-[#4a4036] rounded-[2.5rem] shadow-2xl min-h-[160px] cursor-pointer"
-          onClick={handleBoxClick}>
+        <div
+          className="relative p-8 md:p-10 bg-[#fdfbf7] border-[4px] border-[#d2c4a7] text-[#4a4036] rounded-[2.5rem] shadow-2xl min-h-[160px] cursor-pointer"
+          onClick={handleBoxClick}
+        >
           <div className="absolute -top-5 left-10 px-6 py-2 bg-[#8c7d6c] text-white font-black text-sm rounded-xl shadow-md uppercase">
             {currentScene.speaker}
           </div>

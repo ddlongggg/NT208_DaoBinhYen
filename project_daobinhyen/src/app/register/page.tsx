@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    User,
     Lock,
     Mail,
     Phone,
@@ -11,77 +10,109 @@ import {
     Loader2
 } from 'lucide-react';
 import Link from 'next/link';
-import styles from './register.module.css'; // Sử dụng chung file CSS để đồng bộ giao diện
+import styles from './register.module.css';
 
 const RegisterPage: React.FC = () => {
     const router = useRouter();
 
-    // State quản lý dữ liệu form
     const [formData, setFormData] = useState({
-        username: '',
         email: '',
         phone: '',
         password: '',
         confirmPassword: ''
     });
 
-    // State quản lý thông báo và trạng thái loading
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Hàm cập nhật dữ liệu khi người dùng nhập liệu
+    // 🆕 thêm
+    const [registeredEmail, setRegisteredEmail] = useState('');
+    const [cooldown, setCooldown] = useState(0);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Hàm xử lý gửi form đăng ký
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setMessage('');
 
-        // 1. Kiểm tra mật khẩu khớp nhau (Client-side validation)
         if (formData.password !== formData.confirmPassword) {
             setError('Mật khẩu xác nhận không khớp!');
+            return;
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            setError('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường và ký tự đặc biệt (!@#$%...)');
             return;
         }
 
         setLoading(true);
 
         try {
-            // 2. Gửi yêu cầu API đến Backend
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: formData.username,
                     email: formData.email,
+                    password: formData.password,
                     phone: formData.phone,
-                    password: formData.password
                 }),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                setMessage('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...');
-                // Chuyển hướng sau 2 giây để người dùng kịp đọc thông báo
-                setTimeout(() => {
-                    router.push('/login');
-                }, 2000);
+                setMessage('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.');
+                setRegisteredEmail(formData.email);
             } else {
-                // Hiển thị lỗi trả về từ server (ví dụ: email đã tồn tại)
                 setError(data.error || 'Đăng ký thất bại, vui lòng thử lại.');
             }
-        } catch (err) {
-            setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.');
+        } catch {
+            setError('Không thể kết nối đến máy chủ.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 🆕 resend email
+    const handleResend = async () => {
+        try {
+            setLoading(true);
+
+            const res = await fetch('/api/auth/resend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: registeredEmail }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage('Đã gửi lại email xác minh!');
+                setError('');
+
+                // cooldown 30s
+                setCooldown(30);
+                const timer = setInterval(() => {
+                    setCooldown(prev => {
+                        if (prev <= 1) {
+                            clearInterval(timer);
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+
+            } else {
+                setError(data.error || 'Gửi lại thất bại');
+            }
+        } catch {
+            setError('Lỗi kết nối server');
         } finally {
             setLoading(false);
         }
@@ -89,28 +120,22 @@ const RegisterPage: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            {/* Video nền giữ nguyên phong cách Đảo Bình Yên */}
             <div className={styles.videoBackground}>
                 <video autoPlay muted loop className={styles.video}>
                     <source src="/beach2.mp4" type="video/mp4" />
                 </video>
             </div>
             <audio autoPlay loop src="/tiengchi.mp3" />
+
             <div className={styles.formContainer} style={{ maxWidth: '450px' }}>
-                {/* Logo và Tiêu đề */}
                 <img src="/logo.png" alt="Logo Đảo Bình Yên" className={styles.logo} />
                 <h1>THAM GIA ĐẢO BÌNH YÊN</h1>
                 <p className={styles.subtitle}>Tạo tài khoản mới để bắt đầu hành trình</p>
 
-                {/* Hiển thị thông báo Lỗi hoặc Thành công */}
                 {error && <div className={styles.errorBadge}>{error}</div>}
                 {message && <div className={styles.successBadge}>{message}</div>}
 
                 <form onSubmit={handleRegister} className={styles.form}>
-                    {/* Tên người dùng */}
-
-
-                    {/* Email */}
                     <div className={styles.inputGroup}>
                         <Mail className={styles.icon} size={18} />
                         <input
@@ -124,7 +149,6 @@ const RegisterPage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Số điện thoại */}
                     <div className={styles.inputGroup}>
                         <Phone className={styles.icon} size={18} />
                         <input
@@ -138,7 +162,6 @@ const RegisterPage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Mật khẩu */}
                     <div className={styles.inputGroup}>
                         <Lock className={styles.icon} size={18} />
                         <input
@@ -152,7 +175,6 @@ const RegisterPage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Nhập lại mật khẩu */}
                     <div className={styles.inputGroup}>
                         <ShieldCheck className={styles.icon} size={18} />
                         <input
@@ -166,7 +188,6 @@ const RegisterPage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Nút Đăng ký với trạng thái Loading */}
                     <button
                         type="submit"
                         className={styles.submitButton}
@@ -181,12 +202,34 @@ const RegisterPage: React.FC = () => {
                     </button>
                 </form>
 
-                {/* Footer chuyển hướng */}
+                {/* 🆕 resend + login */}
+                {registeredEmail && (
+                    <>
+                        <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                            <button
+                                onClick={handleResend}
+                                className={styles.submitButton}
+                                disabled={loading || cooldown > 0}
+                                style={{ background: '#888' }}
+                            >
+                                {cooldown > 0 ? `Gửi lại (${cooldown}s)` : 'Gửi lại email xác minh'}
+                            </button>
+                        </div>
+
+                        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                            <button
+                                onClick={() => router.push('/login')}
+                                className={styles.submitButton}
+                                style={{ background: '#4CAF50' }}
+                            >
+                                Tôi đã xác minh → Đăng nhập
+                            </button>
+                        </div>
+                    </>
+                )}
+
                 <div className={styles.footer}>
-                    <p>
-                        Bạn đã có tài khoản?
-                        <Link href="/login"> Bấm đăng nhập</Link>
-                    </p>
+                    <p>Bạn đã có tài khoản? <Link href="/login">Bấm đăng nhập</Link></p>
                 </div>
             </div>
         </div>
