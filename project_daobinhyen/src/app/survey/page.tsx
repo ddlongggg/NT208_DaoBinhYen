@@ -105,7 +105,7 @@ export default function SurveyPage() {
           setUserName(data.username);
           setStage('INTRO');
         } else {
-          router.replace('/emotion-check');
+          router.replace('/daily-checkin');
         }
       } catch {
         setStage('START');

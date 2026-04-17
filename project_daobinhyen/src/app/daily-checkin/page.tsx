@@ -53,26 +53,39 @@ export default function DailyCheckinPage() {
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  // --- 1. MOCK DATA BỘ XỬ LÝ (DÀNH CHO BẠN BACKEND SAU NÀY) ---
+  // --- 1. LẤY DỮ LIỆU TỪ BACKEND ---
   useEffect(() => {
     const fetchUserData = async () => {
-      // TODO: Thay thế đoạn này bằng API gọi Firebase
-      const mockDB: UserData = {
-        userId: 'user_123',
-        userName: 'Lữ Khách',
-        lastLoginDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        lastSurveyType: 'emotion',
-        lastScore: 35,
-        topicStreak: 2,
-      };
+      try {
+        const res = await fetch('/api/user/getUserInFo');
+        if (!res.ok) {
+          router.replace('/login');
+          return;
+        }
 
-      setUserData(mockDB);
-      
-      // Xây dựng kịch bản dựa trên dữ liệu
-      const generatedScenario = buildScenario(mockDB);
-      setScenario(generatedScenario);
-      setCurrentSceneId(generatedScenario[0].id);
-      setIsLoading(false);
+        const data = await res.json();
+        
+        // Chuyển đổi dữ liệu từ API thành chuẩn UserData của component
+        const dbUser: UserData = {
+          userId: data.userId,
+          userName: data.username || 'Bạn',
+          lastLoginDate: data.lastLoginDate,
+          lastSurveyType: data.lastSurveyType,
+          lastScore: data.lastSurveyScore || 0,
+          topicStreak: data.topicStreak || 0,
+        };
+
+        setUserData(dbUser);
+        
+        // Xây dựng kịch bản dựa trên dữ liệu
+        const generatedScenario = buildScenario(dbUser);
+        setScenario(generatedScenario);
+        setCurrentSceneId(generatedScenario[0].id);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu người dùng:", error);
+        router.replace('/login');
+      }
     };
 
     fetchUserData();
@@ -217,20 +230,31 @@ export default function DailyCheckinPage() {
   };
 
   // --- 4. XỬ LÝ CHUYỂN CẢNH & CHỌN CHECK-IN ---
-  const handleNext = (nextId: string, choiceValue?: string) => {
+  const handleNext = async (nextId: string, choiceValue?: string) => {
     playClickSound();
 
     if (choiceValue && userData) {
       const newStreak = (choiceValue === userData.lastSurveyType) ? userData.topicStreak + 1 : 1;
       
-      console.log('Dữ liệu CẦN LƯU VÀO FIREBASE: ', {
-        userId: userData.userId,
-        lastLoginDate: new Date().toISOString(),
-        lastSurveyType: choiceValue,
-        topicStreak: newStreak,
-        lastScore: userData.lastScore 
-      });
-      // TODO: GỌI API FIREBASE UPDATE Ở ĐÂY
+      try {
+        await fetch('/api/user/daily-checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            surveyType: choiceValue,
+            topicStreak: newStreak,
+            lastScore: userData.lastScore 
+          }),
+        });
+
+        setUserData({
+          ...userData,
+          lastSurveyType: choiceValue as 'study' | 'emotion' | 'sleep',
+          topicStreak: newStreak
+        });
+      } catch (error) {
+        console.error('Lỗi khi lưu check-in:', error);
+      }
     }
 
     setDisplayedText('');
