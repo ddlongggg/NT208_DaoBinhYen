@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Khai báo kiểu dữ liệu cho trạng thái thời gian
@@ -11,6 +11,49 @@ const WoodHousePage: React.FC = () => {
   const [isSleeping, setIsSleeping] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
 
+  //Phat nhac demo
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleSleep = () => {
+    const nextSleepingState = !isSleeping;
+    setIsSleeping(nextSleepingState);
+  
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      const targetVolume = nextSleepingState ? 0.5 : 1.0; // Điểm đến: 0.1 khi ngủ, 1.0 khi tỉnh
+      const step = 0.05; // Mỗi bước thay đổi bao nhiêu (càng nhỏ càng mượt)
+      const intervalTime = 50; // Thay đổi sau mỗi 50ms (tổng cộng khoảng 0.5s - 1s để xong)
+  
+      const fadeEffect = setInterval(() => {
+        if (nextSleepingState) {
+          // Đang giảm âm lượng (Fade Out)
+          if (audio.volume > targetVolume) {
+            audio.volume = Math.max(0, audio.volume - step);
+          } else {
+            clearInterval(fadeEffect);
+          }
+        } else {
+          // Đang tăng âm lượng (Fade In)
+          if (audio.volume < targetVolume) {
+            audio.volume = Math.min(1, audio.volume + step);
+          } else {
+            clearInterval(fadeEffect);
+          }
+        }
+      }, intervalTime);
+    }
+  };
   // Logic kiểm tra giờ để đổi ảnh nền
   useEffect(() => {
     const checkTime = () => {
@@ -40,6 +83,14 @@ const WoodHousePage: React.FC = () => {
       className="relative w-screen h-screen bg-cover bg-center transition-all duration-[2000ms] ease-in-out flex items-center justify-center overflow-hidden"
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
+      {/* Thẻ audio ẩn */}
+      <audio 
+        ref={audioRef} 
+        src="/audio/demo.mp3" // Thay đúng tên file mp3 của bạn vào đây
+        loop 
+      />
+
+      
       {/* --- NÚT GO BACK --- */}
       <button 
         onClick={() => router.push('/homepage')} // Hoặc router.push('/homepage') nếu muốn chỉ định đích
@@ -59,12 +110,14 @@ const WoodHousePage: React.FC = () => {
       
       {/* Loa Lo-fi */}
       <button 
-        onClick={() => setActivePanel(activePanel === 'lofi' ? null : 'lofi')}
+        onClick={toggleMusic} // Gọi hàm phát nhạc khi nhấn vào loa
         className="absolute bottom-[20%] left-[12%] z-20 group"
       >
-        <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 text-white group-hover:bg-white/20 transition-all">
-          <p className="font-bold">🔊 Lo-fi Speaker</p>
-          <span className="text-xs opacity-70">Focus mode</span>
+        <div className={`p-4 rounded-xl border transition-all backdrop-blur-md ${
+          isPlaying ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
+        }`}>
+          <p className="font-bold">{isPlaying ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}</p>
+          <span className="text-xs opacity-70">Click to {isPlaying ? 'Pause' : 'Play'}</span>
         </div>
       </button>
 
@@ -81,7 +134,7 @@ const WoodHousePage: React.FC = () => {
 
       {/* Võng (Sleep Mode) */}
       <button 
-        onClick={() => setIsSleeping(!isSleeping)}
+        onClick={toggleSleep}
         className="absolute bottom-[15%] right-[20%] z-20 group"
       >
         <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white group-hover:scale-110 transition-all">
