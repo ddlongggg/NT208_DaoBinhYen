@@ -204,7 +204,7 @@ export default function DynamicIsland() {
                         </h3>
                         <div className="w-8 h-[2px] bg-white mb-2 rounded-full shadow-[0_0_5px_white]"></div>
                         <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md">
-                            Đây là mô tả, chưa nghĩ ra
+                            Nơi mang lại sự bình yên, giúp người dùng tập trung hơn trong công việc và học tập cũng như có thể mang lại cho người dùng 1 giấc ngủ an yên
                         </p>
                     </div>
                 </Link>
