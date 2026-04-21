@@ -10,19 +10,41 @@ const WoodHousePage: React.FC = () => {
   const [session, setSession] = useState<TimeSession>('midday');
   const [isSleeping, setIsSleeping] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [musicType, setMusicType] = useState<'lofi' | 'fm' | null>(null);
 
   //Phat nhac demo
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const toggleMusic = () => {
+  
+  const toggleMusic = (type: 'lofi' | 'fm') => {
     if (!audioRef.current) return;
-    
-    if (isPlaying) {
-      audioRef.current.pause();
+  
+    const audio = audioRef.current;
+    let source = '';
+  
+    if (type === 'lofi') {
+      // Loa: Phát file mp3 bạn để trong folder music
+      source = '/audio/demo.mp3'; 
     } else {
-      audioRef.current.play();
+      // Đài: Gọi stream từ trạm phát radio bên thứ 3
+      source = 'https://lofi.stream.laut.fm/lofi'; 
     }
-    setIsPlaying(!isPlaying);
+  
+    // Nếu người dùng đổi từ Loa sang Đài hoặc ngược lại
+    if (audio.src !== source) {
+      audio.src = source;
+      audio.load();
+    }
+  
+    // Xử lý bật/tắt
+    if (isPlaying && musicType === type) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+      setMusicType(type);
+    }
   };
 
   const toggleSleep = () => {
@@ -31,7 +53,7 @@ const WoodHousePage: React.FC = () => {
   
     if (audioRef.current) {
       const audio = audioRef.current;
-      const targetVolume = nextSleepingState ? 0.5 : 1.0; // Điểm đến: 0.1 khi ngủ, 1.0 khi tỉnh
+      const targetVolume = nextSleepingState ? 0.4 : 1.0; // Điểm đến: 0.1 khi ngủ, 1.0 khi tỉnh
       const step = 0.05; // Mỗi bước thay đổi bao nhiêu (càng nhỏ càng mượt)
       const intervalTime = 50; // Thay đổi sau mỗi 50ms (tổng cộng khoảng 0.5s - 1s để xong)
   
@@ -110,14 +132,19 @@ const WoodHousePage: React.FC = () => {
       
       {/* Loa Lo-fi */}
       <button 
-        onClick={toggleMusic} // Gọi hàm phát nhạc khi nhấn vào loa
+        onClick={() => toggleMusic('lofi')} 
         className="absolute bottom-[20%] left-[12%] z-20 group"
       >
+        {/* Sửa logic kiểm tra ở đây: phải là đang phát VÀ phải là loại lofi */}
         <div className={`p-4 rounded-xl border transition-all backdrop-blur-md ${
-          isPlaying ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
+          isPlaying && musicType === 'lofi' ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
         }`}>
-          <p className="font-bold">{isPlaying ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}</p>
-          <span className="text-xs opacity-70">Click to {isPlaying ? 'Pause' : 'Play'}</span>
+          <p className="font-bold">
+            {isPlaying && musicType === 'lofi' ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}
+          </p>
+          <span className="text-xs opacity-70">
+            Click to {isPlaying && musicType === 'lofi' ? 'Pause' : 'Play'}
+          </span>
         </div>
       </button>
 
@@ -143,17 +170,35 @@ const WoodHousePage: React.FC = () => {
         </div>
       </button>
 
-      {/* --- PANEL ĐIỀU KHIỂN NHẠC --- */}
       {activePanel && (
-        <div className="absolute top-10 right-10 z-30 bg-black/60 backdrop-blur-lg p-6 rounded-2xl text-white w-64 border border-white/10 animate-fade-in">
-          <h3 className="text-xl font-semibold mb-2">
-            {activePanel === 'lofi' ? '🎵 Lofi Beats' : '📻 Live Radio'}
-          </h3>
-          <p className="text-sm opacity-80 mb-4 italic">
-            "Sự bình yên trong từng nốt nhạc..."
-          </p>
-          <button className="w-full bg-white/20 py-2 rounded-lg hover:bg-white/30 transition-colors">
-            Play / Pause
+        <div className="absolute top-24 right-10 z-30 bg-black/70 backdrop-blur-xl p-6 rounded-3xl text-white w-72 border border-white/20 animate-fade-in shadow-2xl">
+          {activePanel === 'lofi' ? (
+            <>
+              <h3 className="text-xl font-bold mb-1">🔊 My Speaker</h3>
+              <p className="text-xs opacity-60 mb-4 uppercase tracking-widest">Local Playlist</p>
+              <p className="text-sm mb-4 text-gray-300">Đang phát nhạc thư giãn từ bộ sưu tập của đảo.</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-xl font-bold mb-1">📻 Vintage Radio</h3>
+              <p className="text-xs opacity-60 mb-4 uppercase tracking-widest">Live Broadcast</p>
+              <p className="text-sm mb-4 text-gray-300">Đang bắt sóng các đài phát thanh trực tuyến...</p>
+            </>
+          )}
+          
+          <button 
+            onClick={() => toggleMusic(activePanel as 'lofi' | 'fm')}
+            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              isPlaying && musicType === activePanel 
+                ? 'bg-red-500/20 text-red-400 border border-red-500/50' 
+                : 'bg-white/10 hover:bg-white/20 border border-white/10'
+            }`}
+          >
+            {isPlaying && musicType === activePanel ? (
+              <><span className="animate-pulse">●</span> Stop</>
+            ) : (
+              <><span className="text-lg">▶</span> Start</>
+            )}
           </button>
         </div>
       )}
