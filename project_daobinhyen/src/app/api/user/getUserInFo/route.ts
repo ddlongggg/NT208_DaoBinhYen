@@ -13,9 +13,12 @@ export async function GET(req: NextRequest) {
 
     const data = userSnap.data();
     return NextResponse.json({
+      userId: decodedToken.uid,
       username: data?.username ?? null,
       lastSurveyScore: data?.lastSurveyScore ?? null,
       lastSurveyType: data?.lastSurveyType ?? null,
+      lastLoginDate: data?.lastCheckinDate ?? data?.lastLogin ?? new Date().toISOString(),
+      topicStreak: data?.topicStreak ?? 0,
     });
   } catch {
     return NextResponse.json({ error: 'Lỗi xác thực' }, { status: 401 });

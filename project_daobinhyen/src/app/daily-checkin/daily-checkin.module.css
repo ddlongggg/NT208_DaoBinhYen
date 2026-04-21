@@ -1,0 +1,26 @@
+.animateFloat { 
+  animation: float 5s ease-in-out infinite; 
+}
+
+.animateKenBurns { 
+  animation: kenBurns 15s linear infinite alternate; 
+}
+
+.animatePulseCursor {
+  animation: pulseCursor 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float { 
+  0%, 100% { transform: translateY(0px); } 
+  50% { transform: translateY(-15px); } 
+}
+
+@keyframes kenBurns { 
+  0% { transform: scale(1); } 
+  100% { transform: scale(1.08); } 
+}
+
+@keyframes pulseCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

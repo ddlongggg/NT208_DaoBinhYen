@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       <div style="margin: 35px 0;">
         <a href="${verificationLink}" 
            style="background: #6c7a65; color: white; padding: 16px 32px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
-           ✅ Xác minh Email & Bắt đầu thư giãn
+           Xác minh Email & Bắt đầu thư giãn
         </a>
       </div>
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   `,
 });
 
-    console.log('✅ MAIL SENT:', info.messageId);
+    console.log('MAIL SENT:', info.messageId);
 
     return NextResponse.json({ message: 'Đã gửi email xác minh' });
   } catch (error: any) {
