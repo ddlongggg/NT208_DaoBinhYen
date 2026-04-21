@@ -11,9 +11,12 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+import { getFirestore } from 'firebase/firestore';
+
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 console.log('FIREBASE AUTH DOMAIN:', auth.config.authDomain);
 
-export { app, auth };
+export { app, auth, db };
