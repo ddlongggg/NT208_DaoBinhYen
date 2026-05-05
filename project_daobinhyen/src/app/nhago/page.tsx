@@ -1,46 +1,73 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { doc, getDoc } from "firebase/firestore";
+import { db } from '@/app/lib/firebase'; 
 
-// Khai báo kiểu dữ liệu cho trạng thái thời gian
 type TimeSession = 'night' | 'sunrise' | 'midday' | 'afternoon';
 
 const WoodHousePage: React.FC = () => {
-  const router = useRouter(); // Khởi tạo router
+  const router = useRouter();
   const [session, setSession] = useState<TimeSession>('midday');
   const [isSleeping, setIsSleeping] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [musicType, setMusicType] = useState<'lofi' | 'fm' | null>(null);
+  const [currentStationIndex, setCurrentStationIndex] = useState(0);
+  
+  // --- STATE LƯU TRỮ DANH SÁCH NHẠC TỪ FIREBASE ---
+  const [fmStations, setFmStations] = useState<any[]>([]);
+  const [lofiTracks, setLofiTracks] = useState<any[]>([]);
 
-  //Phat nhac demo
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  const toggleMusic = (type: 'lofi' | 'fm') => {
+
+  // --- LOGIC FETCH DỮ LIỆU TỪ FIRESTORE ---
+  useEffect(() => {
+    const loadMusicData = async () => {
+      try {
+        // Lấy danh sách đài FM
+        const fmDoc = await getDoc(doc(db, "music", "fm_stations"));
+        if (fmDoc.exists()) {
+          setFmStations(fmDoc.data().list || []);
+        }
+
+        // Tương tự cho lofi_tracks (khi bạn tạo xong document này)
+        const lofiDoc = await getDoc(doc(db, "music", "lofi_tracks"));
+        if (lofiDoc.exists()) {
+          setLofiTracks(lofiDoc.data().list || []);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy nhạc từ Firebase:", error);
+      }
+    };
+    loadMusicData();
+  }, []);
+
+  // --- SỬA LẠI HÀM TOGGLE MUSIC ---
+  const toggleMusic = (type: 'lofi' | 'fm', isNext: boolean = false) => {
     if (!audioRef.current) return;
-  
     const audio = audioRef.current;
-    let source = '';
   
-    if (type === 'lofi') {
-      // Loa: Phát file mp3 bạn để trong folder music
-      source = '/audio/demo.mp3'; 
-    } else {
-      // Đài: Gọi stream từ trạm phát radio bên thứ 3
-      source = 'https://lofi.stream.laut.fm/lofi'; 
-    }
-  
-    // Nếu người dùng đổi từ Loa sang Đài hoặc ngược lại
-    if (audio.src !== source) {
-      audio.src = source;
-      audio.load();
-    }
-  
-    // Xử lý bật/tắt
-    if (isPlaying && musicType === type) {
+    // Nếu không phải bấm Next và đang phát đúng loại đó -> Dừng nhạc
+    if (!isNext && isPlaying && musicType === type) {
       audio.pause();
       setIsPlaying(false);
+      return;
+    }
+  
+    let source = '';
+    if (type === 'fm' && fmStations.length > 0) {
+      // Tính toán index mới: nếu bấm Next thì +1, không thì giữ nguyên
+      const nextIndex = isNext ? (currentStationIndex + 1) % fmStations.length : currentStationIndex;
+      setCurrentStationIndex(nextIndex);
+      source = fmStations[nextIndex].url;
     } else {
+      source = lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3';
+    }
+  
+    if (source) {
+      audio.src = source;
+      audio.load();
       audio.play();
       setIsPlaying(true);
       setMusicType(type);
@@ -171,34 +198,71 @@ const WoodHousePage: React.FC = () => {
       </button>
 
       {activePanel && (
-        <div className="absolute top-24 right-10 z-30 bg-black/70 backdrop-blur-xl p-6 rounded-3xl text-white w-72 border border-white/20 animate-fade-in shadow-2xl">
+        <div className="absolute top-9 right-30 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
             <>
-              <h3 className="text-xl font-bold mb-1">🔊 My Speaker</h3>
-              <p className="text-xs opacity-60 mb-4 uppercase tracking-widest">Local Playlist</p>
-              <p className="text-sm mb-4 text-gray-300">Đang phát nhạc thư giãn từ bộ sưu tập của đảo.</p>
+              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">🔊 My Speaker</h3>
+              <p className="text-[10px] opacity-60 mb-4 uppercase tracking-widest">Local Playlist</p>
+              <div className="bg-black/20 rounded-xl p-3 mb-4 border border-white/5">
+                <p className="text-sm text-gray-300">Đang phát nhạc từ đảo...</p>
+              </div>
             </>
           ) : (
             <>
-              <h3 className="text-xl font-bold mb-1">📻 Vintage Radio</h3>
-              <p className="text-xs opacity-60 mb-4 uppercase tracking-widest">Live Broadcast</p>
-              <p className="text-sm mb-4 text-gray-300">Đang bắt sóng các đài phát thanh trực tuyến...</p>
+              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">📻 Vintage Radio</h3>
+              <p className="text-[10px] opacity-60 mb-4 uppercase tracking-widest">Live Broadcast</p>
+              
+              {/* Khung hiển thị tên đài - Tông màu Xanh Dương Chill */}
+              <div className="bg-black/30 rounded-xl p-4 mb-4 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                <p className="text-[10px] text-blue-400/70 font-mono mb-1 uppercase tracking-wider">
+                  Tuning Frequency:
+                </p>
+                <p className="text-lg font-mono text-blue-400 truncate tracking-tight drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]">
+                  {fmStations.length > 0 ? fmStations[currentStationIndex]?.name : "Bắt sóng..."}
+                </p>
+                
+                {/* Hiệu ứng sóng nhạc nhỏ (Optional) */}
+                {isPlaying && musicType === 'fm' && (
+                  <div className="flex gap-1 mt-2 items-end h-3">
+                    <div className="w-1 bg-blue-400/60 animate-[pulse_1s_infinite] h-full"></div>
+                    <div className="w-1 bg-blue-400/60 animate-[pulse_1.5s_infinite] h-[60%]"></div>
+                    <div className="w-1 bg-blue-400/60 animate-[pulse_1.2s_infinite] h-[80%]"></div>
+                  </div>
+                )}
+              </div>
             </>
           )}
           
-          <button 
-            onClick={() => toggleMusic(activePanel as 'lofi' | 'fm')}
-            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-              isPlaying && musicType === activePanel 
-                ? 'bg-red-500/20 text-red-400 border border-red-500/50' 
-                : 'bg-white/10 hover:bg-white/20 border border-white/10'
-            }`}
-          >
-            {isPlaying && musicType === activePanel ? (
-              <><span className="animate-pulse">●</span> Stop</>
-            ) : (
-              <><span className="text-lg">▶</span> Start</>
+          <div className="flex gap-2">
+            {/* Nút Play/Stop */}
+            <button 
+              onClick={() => toggleMusic(activePanel as 'lofi' | 'fm')}
+              className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                isPlaying && musicType === activePanel 
+                  ? 'bg-red-500/40 text-white border border-red-400/50' 
+                  : 'bg-white/10 hover:bg-white/20 border border-white/10'
+              }`}
+            >
+              {isPlaying && musicType === activePanel ? 'STOP' : 'START'}
+            </button>
+
+            {/* Nút Next Station (Chỉ dành cho FM) */}
+            {activePanel === 'fm' && (
+              <button 
+                onClick={() => toggleMusic('fm', true)}
+                className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl transition-all active:scale-90"
+              >
+                ⏭️
+              </button>
             )}
+          </div>
+
+          {/* Nút Đóng nhanh bảng điều khiển */}
+          <button 
+            onClick={() => setActivePanel(null)}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-white/20 hover:bg-white/40 rounded-full text-xs flex items-center justify-center backdrop-blur-md border border-white/20"
+          >
+            ✕
           </button>
         </div>
       )}
