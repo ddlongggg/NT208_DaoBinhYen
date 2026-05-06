@@ -19,6 +19,7 @@ const WoodHousePage: React.FC = () => {
   const [lofiTracks, setLofiTracks] = useState<any[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // --- LOGIC FETCH DỮ LIỆU TỪ FIRESTORE ---
@@ -44,35 +45,68 @@ const WoodHousePage: React.FC = () => {
   }, []);
 
   // --- SỬA LẠI HÀM TOGGLE MUSIC ---
-  const toggleMusic = (type: 'lofi' | 'fm', isNext: boolean = false) => {
-    if (!audioRef.current) return;
-    const audio = audioRef.current;
-  
-    // Nếu không phải bấm Next và đang phát đúng loại đó -> Dừng nhạc
-    if (!isNext && isPlaying && musicType === type) {
-      audio.pause();
-      setIsPlaying(false);
-      return;
+// Thêm async vào đầu hàm
+const toggleMusic = async (type: 'lofi' | 'fm', isNext: boolean = false) => {
+  if (!audioRef.current) return;
+  const audio = audioRef.current;
+
+  // --- 1. XỬ LÝ NÚT STOP ---
+  // Nếu không phải bấm Next VÀ đang phát đúng loại đó -> Dừng hẳn
+  if (!isNext && isPlaying && musicType === type) {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
-  
-    let source = '';
-    if (type === 'fm' && fmStations.length > 0) {
-      // Tính toán index mới: nếu bấm Next thì +1, không thì giữ nguyên
-      const nextIndex = isNext ? (currentStationIndex + 1) % fmStations.length : currentStationIndex;
-      setCurrentStationIndex(nextIndex);
-      source = fmStations[nextIndex].url;
-    } else {
-      source = lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3';
-    }
-  
-    if (source) {
+    audio.pause();
+    setIsPlaying(false);
+    return; // Thoát hàm luôn, không chạy xuống dưới nữa
+  }
+
+  // --- 2. DỌN DẸP TRƯỚC KHI PHÁT MỚI ---
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+
+  let source = '';
+  if (type === 'fm' && fmStations.length > 0) {
+    // Phép toán % giúp quay lại bài đầu tiên khi hết mảng
+    const nextIndex = isNext ? (currentStationIndex + 1) % fmStations.length : currentStationIndex;
+    setCurrentStationIndex(nextIndex);
+    source = fmStations[nextIndex].url;
+  } else {
+    source = lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3';
+  }
+
+  if (source) {
+    try {
       audio.src = source;
       audio.load();
-      audio.play();
-      setIsPlaying(true);
+      
       setMusicType(type);
+      setIsPlaying(true); 
+
+      // --- 3. BẮT LỖI SPAM (AbortError) ---
+      await audio.play();
+      
+    } catch (err: any) {
+      // Nếu lỗi là do chúng ta chủ động bấm Stop (AbortError), thì im lặng bỏ qua
+      if (err.name === 'AbortError') {
+        console.log("Dừng nhạc do người dùng thao tác nhanh.");
+        return;
+      }
+
+      console.error("Link die thực sự, chuẩn bị nhảy đài...");
+      if (type === 'fm' && fmStations.length > 1) {
+        timeoutRef.current = setTimeout(() => {
+          toggleMusic('fm', true);
+        }, 10000);
+      } else {
+        setIsPlaying(false);
+      }
     }
-  };
+  }
+};
 
   const toggleSleep = () => {
     const nextSleepingState = !isSleeping;
@@ -135,8 +169,16 @@ const WoodHousePage: React.FC = () => {
       {/* Thẻ audio ẩn */}
       <audio 
         ref={audioRef} 
-        src="/audio/demo.mp3" // Thay đúng tên file mp3 của bạn vào đây
+        src="/audio/demo.mp3" 
         loop 
+        // Khi link nhạc bị lỗi (die), hàm này sẽ tự kích hoạt
+        onError={() => {
+          if (musicType === 'fm') {
+            console.log("Đài đang lỗi, tự động chuyển sang đài tiếp theo...");
+            // Đợi 1 giây rồi tự động gọi hàm chuyển đài (isNext = true)
+            setTimeout(() => toggleMusic('fm', true), 1000);
+          }
+        }}
       />
 
       
