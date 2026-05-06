@@ -11,7 +11,7 @@ const WoodHousePage: React.FC = () => {
   const [session, setSession] = useState<TimeSession>('midday');
   const [isSleeping, setIsSleeping] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
-  const [musicType, setMusicType] = useState<'lofi' | 'fm' | null>(null);
+  const [musicType, setMusicType] = useState<'lofi' | 'fm' | 'search' | null>(null);
   const [currentStationIndex, setCurrentStationIndex] = useState(0);
   
   // --- STATE LƯU TRỮ DANH SÁCH NHẠC TỪ FIREBASE ---
@@ -21,6 +21,9 @@ const WoodHousePage: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  //Đếm số lần đài nhảy lỗi
+  const retryCountRef = useRef(0);
 
   // --- LOGIC FETCH DỮ LIỆU TỪ FIRESTORE ---
   useEffect(() => {
@@ -46,34 +49,32 @@ const WoodHousePage: React.FC = () => {
 
   // --- SỬA LẠI HÀM TOGGLE MUSIC ---
 // Thêm async vào đầu hàm
-const toggleMusic = async (type: 'lofi' | 'fm', isNext: boolean = false) => {
+const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = false, searchUrl?: string) => {
   if (!audioRef.current) return;
   const audio = audioRef.current;
 
-  // --- 1. XỬ LÝ NÚT STOP ---
-  // Nếu không phải bấm Next VÀ đang phát đúng loại đó -> Dừng hẳn
-  if (!isNext && isPlaying && musicType === type) {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    audio.pause();
-    setIsPlaying(false);
-    return; // Thoát hàm luôn, không chạy xuống dưới nữa
-  }
-
-  // --- 2. DỌN DẸP TRƯỚC KHI PHÁT MỚI ---
+  // --- QUAN TRỌNG: MỖI LẦN BẤM LÀ RESET HẾT ---
   if (timeoutRef.current) {
     clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
   }
+  // Reset bộ đếm lỗi về 0 ngay lập tức khi có thao tác bấm nút
+  retryCountRef.current = 0; 
+
+  // Xử lý nút STOP
+  if (!isNext && isPlaying && musicType === type && type !== 'search') {
+    audio.pause();
+    setIsPlaying(false);
+    return;
+  }
 
   let source = '';
   if (type === 'fm' && fmStations.length > 0) {
-    // Phép toán % giúp quay lại bài đầu tiên khi hết mảng
     const nextIndex = isNext ? (currentStationIndex + 1) % fmStations.length : currentStationIndex;
     setCurrentStationIndex(nextIndex);
     source = fmStations[nextIndex].url;
+  } else if (type === 'search' && searchUrl) {
+    source = searchUrl;
   } else {
     source = lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3';
   }
@@ -82,25 +83,34 @@ const toggleMusic = async (type: 'lofi' | 'fm', isNext: boolean = false) => {
     try {
       audio.src = source;
       audio.load();
-      
       setMusicType(type);
-      setIsPlaying(true); 
+      setIsPlaying(true);
 
-      // --- 3. BẮT LỖI SPAM (AbortError) ---
       await audio.play();
-      
-    } catch (err: any) {
-      // Nếu lỗi là do chúng ta chủ động bấm Stop (AbortError), thì im lặng bỏ qua
-      if (err.name === 'AbortError') {
-        console.log("Dừng nhạc do người dùng thao tác nhanh.");
-        return;
-      }
+      // Nếu phát thành công cũng đảm bảo reset bộ đếm
+      retryCountRef.current = 0; 
 
-      console.error("Link die thực sự, chuẩn bị nhảy đài...");
-      if (type === 'fm' && fmStations.length > 1) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+
+      console.error("Lỗi link:", source);
+      
+      // Chỉ tự động nhảy đài nếu là chế độ FM
+      if (type === 'fm' && fmStations.length > 0) {
+        retryCountRef.current += 1;
+
+        // Nếu đã thử hết sạch danh sách mà vẫn lỗi thì dừng
+        if (retryCountRef.current >= fmStations.length) {
+          console.log("Tất cả đài đều lỗi. Dừng lại.");
+          setIsPlaying(false);
+          retryCountRef.current = 0;
+          return;
+        }
+
+        // Hẹn giờ nhảy đài (để 5-10s cho chắc)
         timeoutRef.current = setTimeout(() => {
           toggleMusic('fm', true);
-        }, 10000);
+        }, 8000); 
       } else {
         setIsPlaying(false);
       }
