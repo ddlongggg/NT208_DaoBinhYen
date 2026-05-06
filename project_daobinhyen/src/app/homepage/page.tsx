@@ -169,7 +169,9 @@ export default function DynamicIsland() {
                     <div className="absolute w-48 md:w-56 p-4 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none flex flex-col items-center text-center">
                         <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Nhà Gỗ Bình Yên</h3>
                         <div className="w-8 h-[2px] bg-white mb-2 rounded-full shadow-[0_0_5px_white]"></div>
-                        <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md italic">Bấm để xem chi tiết</p>
+                        <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md">
+                            Nơi mang lại sự bình yên, giúp người dùng tập trung hơn trong công việc và học tập cũng như có thể mang lại cho người dùng 1 giấc ngủ an yên
+                        </p>
                     </div>
                 </Link>
 
