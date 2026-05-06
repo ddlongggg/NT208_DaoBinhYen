@@ -25,6 +25,27 @@ const WoodHousePage: React.FC = () => {
   //Đếm số lần đài nhảy lỗi
   const retryCountRef = useRef(0);
 
+  //Loa
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedSearchUrl, setSelectedSearchUrl] = useState<string | null>(null); //Ghi nhớ bài hát đang chọn
+
+  // Hàm gọi API tìm nhạc ( iTunes miễn phí, không cần key)
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&limit=10&media=music`);
+      const data = await res.json();
+      setSearchResults(data.results);
+    } catch (err) {
+      console.error("Lỗi tìm kiếm:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // --- LOGIC FETCH DỮ LIỆU TỪ FIRESTORE ---
   useEffect(() => {
     const loadMusicData = async () => {
@@ -53,66 +74,79 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
   if (!audioRef.current) return;
   const audio = audioRef.current;
 
-  // --- QUAN TRỌNG: MỖI LẦN BẤM LÀ RESET HẾT ---
+  // 1. Reset các lệnh cũ ngay lập tức
   if (timeoutRef.current) {
     clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
   }
-  // Reset bộ đếm lỗi về 0 ngay lập tức khi có thao tác bấm nút
   retryCountRef.current = 0; 
 
-  // Xử lý nút STOP
-  if (!isNext && isPlaying && musicType === type && type !== 'search') {
-    audio.pause();
-    setIsPlaying(false);
-    return;
+  // 2. Kiểm tra lệnh STOP (Chỉ dừng khi bấm cùng loại và không phải chuyển bài)
+  if (!isNext && isPlaying && !searchUrl) {
+    const isStoppingFM = type === 'fm' && musicType === 'fm';
+    const isStoppingLofiOrSearch = (type === 'lofi' || type === 'search') && (musicType === 'lofi' || musicType === 'search');
+    
+    if (isStoppingFM || isStoppingLofiOrSearch) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
   }
 
+  // 3. Xác định nguồn nhạc
   let source = '';
+  let finalType: 'lofi' | 'fm' | 'search' = type;
+
   if (type === 'fm' && fmStations.length > 0) {
     const nextIndex = isNext ? (currentStationIndex + 1) % fmStations.length : currentStationIndex;
     setCurrentStationIndex(nextIndex);
     source = fmStations[nextIndex].url;
-  } else if (type === 'search' && searchUrl) {
-    source = searchUrl;
   } else {
-    source = lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3';
+    // Ưu tiên link mới từ Search -> Link đã chọn trước đó -> Nhạc Lofi
+    source = searchUrl || selectedSearchUrl || (lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3');
+    if (searchUrl) setSelectedSearchUrl(searchUrl);
+    finalType = (searchUrl || selectedSearchUrl) ? 'search' : 'lofi';
   }
 
+  // 4. THỰC HIỆN PHÁT NHẠC NGAY LẬP TỨC
   if (source) {
     try {
+      // Quan trọng: Gán src mới và gọi load() ngay
       audio.src = source;
-      audio.load();
-      setMusicType(type);
+      audio.load(); 
+      
+      // Cập nhật trạng thái hiển thị trước khi await play()
+      setMusicType(finalType);
       setIsPlaying(true);
 
-      await audio.play();
-      // Nếu phát thành công cũng đảm bảo reset bộ đếm
-      retryCountRef.current = 0; 
-
+      // Ép trình duyệt phát nhạc
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+      
+      console.log("Đang phát bài mới:", source);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
-
-      console.error("Lỗi link:", source);
+      console.error("Lỗi phát nhạc:", err);
       
-      // Chỉ tự động nhảy đài nếu là chế độ FM
+      // Logic tự động nhảy đài FM khi lỗi
       if (type === 'fm' && fmStations.length > 0) {
         retryCountRef.current += 1;
-
-        // Nếu đã thử hết sạch danh sách mà vẫn lỗi thì dừng
+        // --- SỬA TẠI ĐÂY: NẾU HỎNG HẾT THÌ PHÁT DEMO ---
         if (retryCountRef.current >= fmStations.length) {
-          console.log("Tất cả đài đều lỗi. Dừng lại.");
-          setIsPlaying(false);
+          console.log("Tất cả đài FM lỗi, chuyển sang nhạc Demo...");
           retryCountRef.current = 0;
+          
+          // Gọi lại chính nó với type lofi để kích hoạt nhạc demo/mặc định
+          toggleMusic('lofi'); 
           return;
         }
-
-        // Hẹn giờ nhảy đài (để 5-10s cho chắc)
-        timeoutRef.current = setTimeout(() => {
-          toggleMusic('fm', true);
-        }, 8000); 
-      } else {
-        setIsPlaying(false);
+        if (retryCountRef.current < fmStations.length) {
+          timeoutRef.current = setTimeout(() => toggleMusic('fm', true), 3000); // Giảm xuống 3s cho nhanh
+        } else {
+          setIsPlaying(false);
+        }
       }
     }
   }
@@ -211,18 +245,18 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
       
       {/* Loa Lo-fi */}
       <button 
-        onClick={() => toggleMusic('lofi')} 
+        onClick={() => setActivePanel(activePanel === 'lofi' ? null : 'lofi')} 
         className="absolute bottom-[20%] left-[12%] z-20 group"
       >
-        {/* Sửa logic kiểm tra ở đây: phải là đang phát VÀ phải là loại lofi */}
         <div className={`p-4 rounded-xl border transition-all backdrop-blur-md ${
           isPlaying && musicType === 'lofi' ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
         }`}>
           <p className="font-bold">
-            {isPlaying && musicType === 'lofi' ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}
+            {/* Icon sẽ đổi màu khi đang phát bất cứ thứ gì từ Loa (lofi hoặc search) */}
+            {isPlaying && (musicType === 'lofi' || musicType === 'search') ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}
           </p>
           <span className="text-xs opacity-70">
-            Click to {isPlaying && musicType === 'lofi' ? 'Pause' : 'Play'}
+            Click to Open Player
           </span>
         </div>
       </button>
@@ -252,14 +286,56 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
       {activePanel && (
         <div className="absolute top-9 right-30 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
-            <>
-              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">🔊 My Speaker</h3>
-              <p className="text-[10px] opacity-60 mb-4 uppercase tracking-widest">Local Playlist</p>
-              <div className="bg-black/20 rounded-xl p-3 mb-4 border border-white/5">
-                <p className="text-sm text-gray-300">Đang phát nhạc từ đảo...</p>
-              </div>
-            </>
-          ) : (
+              <>
+                <h3 className="text-xl font-bold mb-1 flex items-center gap-2">🔊 My Speaker</h3>
+                <p className="text-[10px] opacity-60 mb-4 uppercase tracking-widest">Music Finder</p>
+                
+                {/* Ô Search */}
+                <div className="flex gap-2 bg-black/30 p-2 rounded-xl border border-white/10 mb-4">
+                  <input 
+                    className="flex-1 bg-transparent outline-none text-sm px-2 text-white"
+                    placeholder="Tìm tên bài hát..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                  <button onClick={handleSearch} className="text-blue-400 hover:scale-110 transition-transform">🔍</button>
+                </div>
+
+                {/* Danh sách kết quả Search */}
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar mb-4">
+                  {isSearching ? (
+                    <p className="text-center text-[10px] animate-pulse py-4">ĐANG TÌM KIẾM...</p>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((track) => (
+                      <div 
+                        key={track.trackId}
+                        onClick={() => toggleMusic('search', false, track.previewUrl)}
+                        className={`flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg cursor-pointer border transition-all ${
+                          audioRef.current?.src === track.previewUrl ? 'border-blue-500/50 bg-blue-500/10' : 'border-white/5'
+                        }`}
+                      >
+                        <img src={track.artworkUrl30} className="w-8 h-8 rounded" alt="" />
+                        <div className="flex-1 overflow-hidden">
+                          <p className="text-[11px] font-bold truncate">{track.trackName}</p>
+                          <p className="text-[9px] opacity-50 truncate">{track.artistName}</p>
+                        </div>
+                        {isPlaying && audioRef.current?.src === track.previewUrl && (
+                          <div className="flex gap-0.5 items-end h-2">
+                            <div className="w-0.5 bg-blue-400 animate-bounce h-full"></div>
+                            <div className="w-0.5 bg-blue-400 animate-bounce h-[60%] [animation-delay:0.2s]"></div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 text-center">
+                      <p className="text-[11px] text-gray-400">Hãy tìm bài hát bạn yêu thích...</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
             <>
               <h3 className="text-xl font-bold mb-1 flex items-center gap-2">📻 Vintage Radio</h3>
               <p className="text-[10px] opacity-60 mb-4 uppercase tracking-widest">Live Broadcast</p>
@@ -286,16 +362,27 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
           )}
           
           <div className="flex gap-2">
-            {/* Nút Play/Stop */}
+            {/* Nút Play/Stop dưới cùng của Panel */}
             <button 
-              onClick={() => toggleMusic(activePanel as 'lofi' | 'fm')}
+              onClick={() => {
+                // Nếu đang phát nhạc Search, bấm nút này sẽ truyền type 'search' để dừng
+                const callType = (activePanel === 'lofi' && musicType === 'search') ? 'search' : (activePanel as 'lofi' | 'fm');
+                toggleMusic(callType);
+              }}
               className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                isPlaying && musicType === activePanel 
+                isPlaying && (
+                  musicType === activePanel || 
+                  (activePanel === 'lofi' && musicType === 'search') // THÊM ĐIỀU KIỆN NÀY
+                )
                   ? 'bg-red-500/40 text-white border border-red-400/50' 
                   : 'bg-white/10 hover:bg-white/20 border border-white/10'
               }`}
             >
-              {isPlaying && musicType === activePanel ? 'STOP' : 'START'}
+              {/* Hiển thị chữ STOP nếu nhạc đang phát tương ứng với Panel đang mở */}
+              {isPlaying && (
+                musicType === activePanel || 
+                (activePanel === 'lofi' && musicType === 'search') // THÊM ĐIỀU KIỆN NÀY
+              ) ? 'STOP' : 'START'}
             </button>
 
             {/* Nút Next Station (Chỉ dành cho FM) */}
