@@ -11,9 +11,9 @@ interface Scene {
 }
 
 const SCORE_LEVELS = [
-  { text: 'Rất tồi tệ', weight: 1 }, { text: 'Rất tệ', weight: 2 },
-  { text: 'Tệ', weight: 3 }, { text: 'Bình thường', weight: 4 },
-  { text: 'Tốt', weight: 5 }, { text: 'Rất tốt', weight: 6 }, { text: 'Tuyệt vời', weight: 7 },
+  { text: '1 ⭐', weight: 1 }, { text: '2 ⭐', weight: 2 },
+  { text: '3 ⭐', weight: 3 }, { text: '4 ⭐', weight: 4 },
+  { text: '5 ⭐', weight: 5 }, { text: '6 ⭐', weight: 6 }, { text: '7 ⭐', weight: 7 }, { text: '8 ⭐', weight: 8 }, { text: '9 ⭐', weight: 9 }, { text: '10 ⭐', weight: 10 },
 ];
 
 const SURVEY_DATA = {
@@ -80,10 +80,20 @@ export default function SurveyPage() {
   ];
 
   const getResultText = (score: number) => {
-    if (score <= 25) return `Ta thấy lòng con đang trĩu nặng quá. Đừng cố quá sức nhé, hãy để hòn đảo này ôm lấy con.`;
-    if (score <= 45) return `Mọi thứ hơi xáo trộn một chút đúng không? Đừng lo, ta sẽ dẫn con đến nơi yên bình nhất.`;
-    if (score <= 60) return `Con đang làm rất tốt! Hòn đảo này sẽ giúp con duy trì nguồn năng lượng tích cực này.`;
-    return `Tuyệt vời! Tâm hồn con rạng rỡ như ánh nắng trên đảo vậy. Hãy tận hưởng nhé!`;
+    // Tạo tiền đề hiển thị số điểm trước
+    const scorePrefix = `[Kết quả: ${score}/100 điểm] - `;
+
+    if (score <= 10) return `${scorePrefix} | Ta thấy lòng con đang trĩu nặng quá. Đừng cố gắng gồng mình thêm nữa, hãy để hòn đảo này ôm lấy và vỗ về nỗi đau của con.`;
+    if (score <= 20) return `${scorePrefix} | Giông bão ngoài kia có lẽ đã làm con mệt nhoài. Hãy tạm dừng chân tại đây, để tiếng sóng xóa nhòa đi những muộn phiền.`;
+    if (score <= 30) return `${scorePrefix} | Mọi thứ đang hơi xáo trộn một chút đúng không? Đừng lo, ta sẽ dẫn con đến nơi yên bình nhất trên đảo để tìm lại sự thăng bằng.`;
+    if (score <= 40) return `${scorePrefix} | Có đôi lúc mây mù che lối, nhưng mặt trời vẫn luôn ở đó. Hãy nghỉ ngơi một chút, con sẽ thấy tia sáng sớm thôi.`;
+    if (score <= 50) return `${scorePrefix} | Con đang đứng ở ngưỡng cửa của sự bình yên. Chỉ cần hít một hơi thật sâu, con sẽ cảm nhận được hương hoa dịu nhẹ của hòn đảo.`;
+    if (score <= 60) return `${scorePrefix} | Con đang làm rất tốt! Sự kiên cường của con giống như ngọn hải đăng trên đảo, vẫn luôn âm thầm tỏa sáng giữa màn đêm.`;
+    if (score <= 70) return `${scorePrefix} | Tâm hồn con bắt đầu bừng sáng trở lại rồi. Hãy để nguồn năng lượng tích cực này lan tỏa khắp cánh rừng xanh của hòn đảo nhé.`;
+    if (score <= 80) return `${scorePrefix} | Thật tuyệt vời khi thấy con rạng rỡ như thế này! Hãy tiếp tục duy trì nhịp thở nhẹ nhàng này để cảm nhận niềm vui trọn vẹn.`;
+    if (score <= 90) return `${scorePrefix} | Tâm hồn con rạng rỡ như ánh nắng ban mai trên biển vậy. Sự bình yên trong con chính là món quà quý giá nhất lúc này.`;
+
+    return `${scorePrefix} | Tuyệt diệu! Con đã hoàn toàn hòa mình vào sự thuần khiết của hòn đảo. Hãy tận hưởng và mang theo ánh sáng này đi khắp muôn nơi!`;
   };
 
   // CHECK USER KHI VÀO TRANG — PHÂN NHÁNH 3 LUỒNG
@@ -105,7 +115,7 @@ export default function SurveyPage() {
           setUserName(data.username);
           setStage('INTRO');
         } else {
-          router.replace('/homepage');
+          router.replace('/daily-checkin');
         }
       } catch {
         setStage('START');
