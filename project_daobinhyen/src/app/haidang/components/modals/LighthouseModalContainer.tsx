@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Map, FileText, BookOpen, Compass } from 'lucide-react';
 import MauGiayNhoTab from './MauGiayNho/MauGiayNhoTab';
+import NhatKyNeoDauTab from './NhatKyNeoDau/NhatKyNeoDauTab';
 
 export type ModalTab = 'hai-do' | 'mau-giay' | 'nhat-ky' | 'la-ban';
 
@@ -80,7 +81,7 @@ export default function LighthouseModalContainer({ isOpen, initialTab = 'hai-do'
                   {/* Nơi đây sẽ Render Component tương ứng tuỳ thuộc vào activeTab */}
                   {activeTab === 'hai-do' && <h2 className="text-2xl font-bold text-[#5C3A21]">📍 Nội dung Hải Đồ Tương Lai</h2>}
                   {activeTab === 'mau-giay' && <MauGiayNhoTab />}
-                  {activeTab === 'nhat-ky' && <h2 className="text-2xl font-bold text-[#5C3A21]">📖 Nội dung Nhật Ký Neo Đậu</h2>}
+                  {activeTab === 'nhat-ky' && <NhatKyNeoDauTab />}
                   {activeTab === 'la-ban' && <h2 className="text-2xl font-bold text-[#5C3A21]">🧭 Nội dung La Bàn Tiến Độ</h2>}
                 </motion.div>
               </AnimatePresence>

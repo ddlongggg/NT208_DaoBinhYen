@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar as CalendarIcon, Save } from 'lucide-react';
-import { addTask, getTasks, TaskData, TaskDifficulty, TaskType } from '@/services/firebase/taskService';
+import * as LucideIcons from 'lucide-react';
+import { addTask, getTasks, TaskData, TaskDifficulty, TaskType } from '@/app/api/user/lighthouse/taskService';
 import { Timestamp } from 'firebase/firestore';
 
 interface AddTaskDialogProps {
@@ -34,6 +35,8 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
   
   const [longTaskId, setLongTaskId] = useState<string>('');
   const [availableLongTasks, setAvailableLongTasks] = useState<TaskData[]>([]);
+
+  const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,17 +116,44 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
           </div>
 
           <div className="grid grid-cols-2 gap-5">
-            {/* Icon Picker */}
-            <div>
+            {/* Icon Picker (Custom Select để render Icon + chữ) */}
+            <div className="relative">
               <label className="block text-sm font-bold text-[#8B5A2B] mb-1">Chọn Logo / Biểu tượng</label>
-              <select 
-                className="w-full p-3 rounded-lg border border-[#D2B48C] bg-white text-[#5C3A21] placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#8B5A2B] cursor-pointer"
-                value={icon} onChange={(e) => setIcon(e.target.value)}
+              
+              <div 
+                className="w-full p-3 rounded-lg border border-[#D2B48C] bg-white text-[#5C3A21] flex justify-between items-center cursor-pointer hover:border-[#8B5A2B] transition shadow-sm"
+                onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)}
               >
-                {AVAILABLE_ICONS.map(ic => (
-                  <option key={ic.name} value={ic.name}>{ic.label}</option>
-                ))}
-              </select>
+                <div className="flex items-center gap-3">
+                  {React.createElement((LucideIcons as any)[icon] || LucideIcons.FileText, { size: 18, className: "text-[#8B5A2B]" })}
+                  <span className="font-semibold">{AVAILABLE_ICONS.find(i => i.name === icon)?.label}</span>
+                </div>
+                <LucideIcons.ChevronDown size={18} className={`text-gray-400 transition-transform ${isIconDropdownOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              {isIconDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsIconDropdownOpen(false)} />
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#D2B48C] rounded-lg shadow-xl z-50 py-1 max-h-48 overflow-y-auto">
+                    {AVAILABLE_ICONS.map(ic => {
+                      const IconComp = (LucideIcons as any)[ic.name] || LucideIcons.FileText;
+                      const isSelected = icon === ic.name;
+                      return (
+                        <div 
+                          key={ic.name}
+                          className={`px-4 py-3 hover:bg-[#E8D4BB]/60 cursor-pointer flex items-center justify-between text-[#5C3A21] transition ${
+                            isSelected ? 'bg-[#FFFBF5] font-bold border-l-4 border-[#8B5A2B]' : 'border-l-4 border-transparent'
+                          }`}
+                          onClick={() => { setIcon(ic.name); setIsIconDropdownOpen(false); }}
+                        >
+                          <span>{ic.label}</span>
+                          <IconComp size={20} className={isSelected ? 'text-[#8B5A2B]' : 'text-gray-400'} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Độ khó */}

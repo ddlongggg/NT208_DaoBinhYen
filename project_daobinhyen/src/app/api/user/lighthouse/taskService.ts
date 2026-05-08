@@ -107,3 +107,42 @@ export const deleteMultipleTasks = async (taskIds: string[]) => {
     throw error;
   }
 };
+
+// --- COMMITS MANAGEMENT (NHẬT KÝ NEO ĐẬU & LA BÀN) ---
+export interface CommitData {
+  id?: string;
+  taskId: string;
+  userId: string;
+  title: string;
+  description: string;
+  oldProgress: number;
+  newProgress: number;
+  createdAt: Timestamp;
+}
+
+const COMMITS_COLLECTION = 'commits';
+
+// Lấy lịch sử commits của một Task
+export const getCommitsByTask = async (taskId: string) => {
+  try {
+    // Bỏ orderBy trong query để tránh lỗi thiếu Composite Index của Firebase
+    // Thay vào đó, chúng ta sẽ sort (sắp xếp) mảng ở phía client
+    const q = query(
+      collection(db, COMMITS_COLLECTION),
+      where("taskId", "==", taskId)
+    );
+    const querySnapshot = await getDocs(q);
+    const commits: CommitData[] = [];
+    querySnapshot.forEach((doc) => {
+      commits.push({ id: doc.id, ...doc.data() } as CommitData);
+    });
+    
+    // Sắp xếp commits mới nhất lên đầu
+    commits.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    
+    return commits;
+  } catch (error) {
+    console.error("Error getting commits: ", error);
+    throw error;
+  }
+};

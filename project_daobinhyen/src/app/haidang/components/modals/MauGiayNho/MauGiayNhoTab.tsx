@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getTasks, deleteTask, TaskData, deleteMultipleTasks } from '@/services/firebase/taskService';
+import { getTasks, deleteTask, TaskData, deleteMultipleTasks } from '@/app/api/user/lighthouse/taskService';
 import { auth } from '@/app/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Trash2, Plus, Clock, CheckCircle, AlertOctagon, MoreVertical } from 'lucide-react';

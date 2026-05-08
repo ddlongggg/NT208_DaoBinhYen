@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import LighthouseModalContainer, { ModalTab } from '@/components/haidang/modals/LighthouseModalContainer';
+import LighthouseModalContainer, { ModalTab } from './components/modals/LighthouseModalContainer';
 
 export default function HaiDang() {
     const [floor, setFloor] = useState<1 | 2>(1);
