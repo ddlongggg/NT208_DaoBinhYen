@@ -31,6 +31,9 @@ const WoodHousePage: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedSearchUrl, setSelectedSearchUrl] = useState<string | null>(null); //Ghi nhớ bài hát đang chọn
 
+  //Nút âm lượng
+  const [volume, setVolume] = useState(0.5); // Mặc định 50%
+
   // Hàm gọi API tìm nhạc ( iTunes miễn phí, không cần key)
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -152,35 +155,6 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
   }
 };
 
-  const toggleSleep = () => {
-    const nextSleepingState = !isSleeping;
-    setIsSleeping(nextSleepingState);
-  
-    if (audioRef.current) {
-      const audio = audioRef.current;
-      const targetVolume = nextSleepingState ? 0.4 : 1.0; // Điểm đến: 0.1 khi ngủ, 1.0 khi tỉnh
-      const step = 0.05; // Mỗi bước thay đổi bao nhiêu (càng nhỏ càng mượt)
-      const intervalTime = 50; // Thay đổi sau mỗi 50ms (tổng cộng khoảng 0.5s - 1s để xong)
-  
-      const fadeEffect = setInterval(() => {
-        if (nextSleepingState) {
-          // Đang giảm âm lượng (Fade Out)
-          if (audio.volume > targetVolume) {
-            audio.volume = Math.max(0, audio.volume - step);
-          } else {
-            clearInterval(fadeEffect);
-          }
-        } else {
-          // Đang tăng âm lượng (Fade In)
-          if (audio.volume < targetVolume) {
-            audio.volume = Math.min(1, audio.volume + step);
-          } else {
-            clearInterval(fadeEffect);
-          }
-        }
-      }, intervalTime);
-    }
-  };
   // Logic kiểm tra giờ để đổi ảnh nền
   useEffect(() => {
     const checkTime = () => {
@@ -210,79 +184,6 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
       className="relative w-screen h-screen bg-cover bg-center transition-all duration-[2000ms] ease-in-out flex items-center justify-center overflow-hidden"
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
-      {/* Thẻ audio ẩn */}
-      <audio 
-        ref={audioRef} 
-        src="/audio/demo.mp3" 
-        loop 
-        // Khi link nhạc bị lỗi (die), hàm này sẽ tự kích hoạt
-        onError={() => {
-          if (musicType === 'fm') {
-            console.log("Đài đang lỗi, tự động chuyển sang đài tiếp theo...");
-            // Đợi 1 giây rồi tự động gọi hàm chuyển đài (isNext = true)
-            setTimeout(() => toggleMusic('fm', true), 1000);
-          }
-        }}
-      />
-
-      
-      {/* --- NÚT GO BACK --- */}
-      <button 
-        onClick={() => router.push('/homepage')} // Hoặc router.push('/homepage') nếu muốn chỉ định đích
-        className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full border border-white/20 transition-all group"
-      >
-        <span className="group-hover:-translate-x-1 transition-transform">←</span>
-        <span className="font-medium text-sm">Rời khỏi nhà gỗ</span>
-      </button>
-      {/* Overlay làm tối khi nhấn vào võng */}
-      <div 
-        className={`fixed inset-0 bg-[#000514]/85 z-10 pointer-events-none transition-opacity duration-[3000ms] ${
-          isSleeping ? 'opacity-100' : 'opacity-0'
-        }`} 
-      />
-
-      {/* --- CÁC VẬT DỤNG TƯƠNG TÁC --- */}
-      
-      {/* Loa Lo-fi */}
-      <button 
-        onClick={() => setActivePanel(activePanel === 'lofi' ? null : 'lofi')} 
-        className="absolute bottom-[20%] left-[12%] z-20 group"
-      >
-        <div className={`p-4 rounded-xl border transition-all backdrop-blur-md ${
-          isPlaying && musicType === 'lofi' ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
-        }`}>
-          <p className="font-bold">
-            {/* Icon sẽ đổi màu khi đang phát bất cứ thứ gì từ Loa (lofi hoặc search) */}
-            {isPlaying && (musicType === 'lofi' || musicType === 'search') ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}
-          </p>
-          <span className="text-xs opacity-70">
-            Click to Open Player
-          </span>
-        </div>
-      </button>
-
-      {/* Đài FM */}
-      <button 
-        onClick={() => setActivePanel(activePanel === 'fm' ? null : 'fm')}
-        className="absolute bottom-[30%] left-[28%] z-20 group"
-      >
-        <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 text-white group-hover:bg-white/20 transition-all">
-          <p className="font-bold">📻 Live FM</p>
-          <span className="text-xs opacity-70">Real-time radio</span>
-        </div>
-      </button>
-
-      {/* Võng (Sleep Mode) */}
-      <button 
-        onClick={toggleSleep}
-        className="absolute bottom-[15%] right-[20%] z-20 group"
-      >
-        <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white group-hover:scale-110 transition-all">
-          <p className="font-bold">🧶 The Hammock</p>
-          <span className="text-xs opacity-70">{isSleeping ? 'Wake up' : 'Take a nap'}</span>
-        </div>
-      </button>
-
       {activePanel && (
         <div className="absolute top-9 right-30 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
@@ -406,11 +307,104 @@ const toggleMusic = async (type: 'lofi' | 'fm' | 'search', isNext: boolean = fal
         </div>
       )}
 
-      {/* Status Bar */}
-      <div className="absolute bottom-5 bg-black/20 text-white/80 px-4 py-1 rounded-full text-sm backdrop-blur-sm">
-        {session.toUpperCase()} MODE ACTIVE
+        {/* Thẻ audio ẩn */}
+      <audio 
+        ref={audioRef} 
+        src="/audio/demo.mp3" 
+        loop 
+        // Khi link nhạc bị lỗi (die), hàm này sẽ tự kích hoạt
+        onError={() => {
+          if (musicType === 'fm') {
+            console.log("Đài đang lỗi, tự động chuyển sang đài tiếp theo...");
+            // Đợi 1 giây rồi tự động gọi hàm chuyển đài (isNext = true)
+            setTimeout(() => toggleMusic('fm', true), 1000);
+          }
+        }}
+      />
+
+      
+      {/* --- NÚT GO BACK --- */}
+      <button 
+        onClick={() => router.push('/homepage')} // Hoặc router.push('/homepage') nếu muốn chỉ định đích
+        className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full border border-white/20 transition-all group"
+      >
+        <span className="group-hover:-translate-x-1 transition-transform">←</span>
+        <span className="font-medium text-sm">Rời khỏi nhà gỗ</span>
+      </button>
+      {/* Overlay làm tối khi nhấn vào võng */}
+      <div 
+        className={`fixed inset-0 bg-[#000514]/85 z-10 pointer-events-none transition-opacity duration-[3000ms] ${
+          isSleeping ? 'opacity-100' : 'opacity-0'
+        }`} 
+      />
+
+      {/* --- CÁC VẬT DỤNG TƯƠNG TÁC --- */}
+      
+      {/* Loa Lo-fi */}
+      <button 
+        onClick={() => setActivePanel(activePanel === 'lofi' ? null : 'lofi')} 
+        className="absolute bottom-[20%] left-[12%] z-20 group"
+      >
+        <div className={`p-4 rounded-xl border transition-all backdrop-blur-md ${
+          isPlaying && musicType === 'lofi' ? 'bg-green-500/20 border-green-400' : 'bg-white/10 border-white/20'
+        }`}>
+          <p className="font-bold">
+            {/* Icon sẽ đổi màu khi đang phát bất cứ thứ gì từ Loa (lofi hoặc search) */}
+            {isPlaying && (musicType === 'lofi' || musicType === 'search') ? '⏸ Music Playing' : '🔊 Lo-fi Speaker'}
+          </p>
+          <span className="text-xs opacity-70">
+            Click to Open Player
+          </span>
+        </div>
+      </button>
+
+      {/* Đài FM */}
+      <button 
+        onClick={() => setActivePanel(activePanel === 'fm' ? null : 'fm')}
+        className="absolute bottom-[30%] left-[28%] z-20 group"
+      >
+        <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 text-white group-hover:bg-white/20 transition-all">
+          <p className="font-bold">📻 Live FM</p>
+          <span className="text-xs opacity-70">Real-time radio</span>
+        </div>
+      </button>
+
+      {/* Võng (Sleep Mode) */}
+      <button 
+        onClick={() => setIsSleeping(!isSleeping)}
+        className="absolute bottom-[15%] right-[20%] z-20 group"
+      >
+        <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white group-hover:scale-110 transition-all">
+          <p className="font-bold">🧶 The Hammock</p>
+          <span className="text-xs opacity-70">{isSleeping ? 'Wake up' : 'Take a nap'}</span>
+        </div>
+      </button>
+
+        {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 text-white">
+          <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Vol</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.01" 
+            value={volume} 
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              setVolume(v);
+              if(audioRef.current) audioRef.current.volume = v;
+            }} 
+            className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" 
+          />
+        </div>
+
+        {/* Status Bar - Đẩy qua góc dưới bên phải, tăng kích thước để che logo Gemini */}
+        <div className="absolute bottom-2 right-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
+          <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
+            {session} mode
+          </p>
+        </div>
       </div>
-    </div>
   );
 };
 export default WoodHousePage;
