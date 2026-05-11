@@ -13,6 +13,7 @@ const WoodHousePage: React.FC = () => {
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [musicType, setMusicType] = useState<'lofi' | 'fm' | null>(null);
   const [currentStationIndex, setCurrentStationIndex] = useState(0);
+  const [currentTrackUrl, setCurrentTrackUrl] = useState<string>(''); // Để hiển thị sóng
   
   // --- STATE LƯU TRỮ DANH SÁCH NHẠC TỪ FIREBASE ---
   const [fmStations, setFmStations] = useState<any[]>([]);
@@ -82,6 +83,16 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
   if (timeoutRef.current) clearTimeout(timeoutRef.current);
   retryCountRef.current = 0; 
 
+  const targetSrc = trackUrl || audio.src || (lofiTracks.length > 0 ? lofiTracks[0].url : '/audio/demo.mp3');
+  const isChangingTrack = trackUrl && audio.src !== trackUrl;
+
+  // Logic Bật/Tắt (Chỉ tắt khi bấm nút START/STOP của chính bài đang phát)
+  if (!isNext && !isChangingTrack && isPlaying && musicType === type && !trackUrl) {
+    audio.pause();
+    setIsPlaying(false);
+    return;
+  }
+
   // 2. Kiểm tra lệnh STOP (Chỉ dừng khi bấm cùng loại và không phải chuyển bài)
   if (!isNext && isPlaying && musicType === type && !trackUrl) {
     audio.pause();
@@ -102,15 +113,24 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
 
   // 4. Phát nhạc
   try {
-    audio.src = source;
+
+    if (isChangingTrack || !audio.src || audio.src === '') {
+      audio.src = targetSrc;
+      // Cập nhật state ngay tại đây để UI nhận diện bài mới lập tức
+      setCurrentTrackUrl(targetSrc);
+      audio.load(); // Chỉ load khi đổi nguồn nhạc mới
+    }
+    else {
+      // Nếu chỉ là Resume bài cũ, đảm bảo state vẫn đúng bài đó
+      setCurrentTrackUrl(audio.src);
+    }
+
     audio.volume = volume;
-    audio.load();
-    
     setMusicType(type);
-    setIsPlaying(true);
-    
     await audio.play();
+    setIsPlaying(true);
     retryCountRef.current = 0; // Phát thành công thì reset đếm lỗi
+
   } catch (err: any) {
     if (err.name === 'AbortError') return;
     
@@ -185,7 +205,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
                         key={index} 
                         onClick={() => toggleMusic('lofi', false, track.url)} 
                         className={`flex items-center gap-3 p-3 hover:bg-white/10 rounded-xl cursor-pointer border transition-all ${
-                          audioRef.current?.src === track.url 
+                          currentTrackUrl.includes(track.url) 
                             ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
                             : 'border-white/5 bg-black/40'
                         }`}
@@ -203,7 +223,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
                         </div>
 
                         {/* Hiệu ứng sóng nhạc - Đã sửa lỗi so sánh track.url */}
-                        {isPlaying && audioRef.current?.src === track.url && (
+                        {isPlaying && currentTrackUrl.includes(track.url) && (
                           <div className="flex gap-0.5 items-end h-3 mb-1">
                             <div className="w-0.5 bg-blue-400 animate-bounce h-full"></div>
                             <div className="w-0.5 bg-blue-400 animate-bounce h-[60%] [animation-delay:0.2s]"></div>
