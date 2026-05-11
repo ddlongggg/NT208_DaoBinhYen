@@ -114,14 +114,13 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
   // 4. Phát nhạc
   try {
 
-    if (isChangingTrack || !audio.src || audio.src === '') {
-      audio.src = targetSrc;
-      // Cập nhật state ngay tại đây để UI nhận diện bài mới lập tức
-      setCurrentTrackUrl(targetSrc);
-      audio.load(); // Chỉ load khi đổi nguồn nhạc mới
-    }
-    else {
-      // Nếu chỉ là Resume bài cũ, đảm bảo state vẫn đúng bài đó
+    const finalSource = source; 
+
+    if (isChangingTrack || audio.src !== finalSource || !audio.src) {
+      audio.src = finalSource;
+      setCurrentTrackUrl(finalSource); // Cập nhật để UI biết đang phát bài/đài nào
+      audio.load();
+    } else {
       setCurrentTrackUrl(audio.src);
     }
 
