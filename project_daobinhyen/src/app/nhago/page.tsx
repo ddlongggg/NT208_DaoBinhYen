@@ -113,12 +113,9 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
 
   // 4. Phát nhạc
   try {
-
-    const finalSource = source; 
-
-    if (isChangingTrack || audio.src !== finalSource || !audio.src) {
-      audio.src = finalSource;
-      setCurrentTrackUrl(finalSource); // Cập nhật để UI biết đang phát bài/đài nào
+    if (isChangingTrack || audio.src !== source || !audio.src) {
+      audio.src = source;
+      setCurrentTrackUrl(source); // Cập nhật để UI biết đang phát bài/đài nào
       audio.load();
     } else {
       setCurrentTrackUrl(audio.src);
