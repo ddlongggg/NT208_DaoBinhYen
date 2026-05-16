@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Thêm router để điều hướng từ Modal
 
+interface UserProfile {
+    name: string;
+    points: number;
+    emotion: string;
+    gold: number;
+    level: number;
+}
+
 export default function DynamicIsland() {
+
     const router = useRouter();
     const [bgImage, setBgImage] = useState<string>('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -13,6 +22,67 @@ export default function DynamicIsland() {
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
     const [selectedZone, setSelectedZone] = useState<{ title: string, path: string, desc: string, img: string } | null>(null);
+
+
+    // --- PHẦN MỚI: Quản lý dữ liệu người dùng ---
+    const [userData, setUserData] = useState({
+        name: 'Đang tải...',
+        points: 0,
+        gold: 0,
+        avatar: 'logo.png'
+    });
+
+    // Hàm tính Level từ Points (Ví dụ: mỗi 100 điểm lên 1 level)
+    const calculateLevel = (pts: number) => Math.floor(pts / 10) + 1;
+
+    // Hàm tính Emotion từ Points
+    const calculateEmotion = (pts: number) => {
+        if (pts < 10) return 'Vực Thẳm Tâm Linh';
+        if (pts < 20) return 'Sương Mù Uất Nghẹn';
+        if (pts < 30) return 'Tro Tàn Lặng Lẽ';
+        if (pts < 40) return 'Chênh Vênh Độc Hành';
+        if (pts < 50) return 'Tĩnh Lặng Thấu Suốt';
+        if (pts < 60) return 'Tia Sáng Khởi Nguyên';
+        if (pts < 70) return 'Vườn Hoa Chớm Nở';
+        if (pts < 80) return 'Rạng Rỡ Ánh Dương';
+        if (pts < 90) return 'Thăng Hoa Thuần Khiết';
+        return 'Đại Ngộ Thiên Đường'; // Trên 900 điểm
+    };
+
+    // Gọi API lấy dữ liệu từ Backend
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                // Thay 'USER_ID' bằng ID thực tế của bạn
+                const res = await fetch('/api/user/profile/USER_ID');
+                const data = await res.json();
+                if (res.ok) {
+                    setUserData({
+                        name: data.name,
+                        points: data.points,
+                        gold: data.gold,
+                        avatar: 'logo.png'
+                    });
+                }
+            } catch (error) {
+                console.error("Lỗi gọi API profile:", error);
+            }
+        };
+        fetchUserData();
+    }, []);
+
+    const emotionMessages: Record<string, string> = {
+        'Vực Thẳm Tâm Linh': 'Trạng thái cảm xúc tồi tệ nhất, có lẽ bạn đang gặp phải rất nhiều vấn đề trong cuộc sống.',
+        'Sương Mù Uất Nghẹn': 'Lòng đầy tâm sự và sự lạc lõng, hãy cho phép bản thân nghỉ ngơi một chút.',
+        'Tro Tàn Lặng Lẽ': 'Sức cùng lực kiệt, nhưng sâu trong tro tàn vẫn còn mầm sống chờ đợi.',
+        'Chênh Vênh Độc Hành': 'Bước chân đơn độc đôi khi mỏi mệt, nhưng đó là lúc bạn tìm thấy chính mình.',
+        'Tĩnh Lặng Thấu Suốt': 'Tâm trí bắt đầu lặng sóng, bạn đã đủ bình tĩnh để nhìn thấu mọi chuyện.',
+        'Tia Sáng Khởi Nguyên': 'Hy vọng đã nhen nhóm, một khởi đầu mới đang chờ đợi bạn phía trước.',
+        'Vườn Hoa Chớm Nở': 'Niềm vui đang lan tỏa, hãy tận hưởng những điều nhỏ bé tuyệt vời này.',
+        'Rạng Rỡ Ánh Dương': 'Hạnh phúc tràn đầy, bạn đang là nguồn năng lượng ấm áp cho mọi người.',
+        'Thăng Hoa Thuần Khiết': 'Cảm xúc viên mãn, không gì có thể làm lay chuyển sự an yên trong bạn.',
+        'Đại Ngộ Thiên Đường': 'Trạng thái hạnh phúc tối thượng, bạn đã thực sự tìm thấy thiên đường của riêng mình.'
+    };
 
     // Dữ liệu bổ sung cho các bảng hiện lên
     const zonesInfo: Record<string, any> = {
@@ -72,6 +142,7 @@ export default function DynamicIsland() {
         return <div className="bg-black w-screen h-screen" />;
     }
 
+
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black">
             <style>{`
@@ -94,37 +165,66 @@ export default function DynamicIsland() {
                     backgroundRepeat: 'no-repeat',
                 }}
             >
-                {/* Giữ nguyên Profile Bar của bạn */}
-                <div className="absolute top-18 left-6 z-[100] flex flex-col items-start gap-3">
+                {/* --- PROFILE BAR (ĐÃ ĐƯỢC SỬA) --- */}
+                <div className="absolute top-15 left-6 z-[100] flex flex-col items-start gap-4">
                     <div
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-3 p-2 pr-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg cursor-pointer hover:bg-white/20 transition-all duration-300 group"
+                        className="group relative flex items-center gap-4 p-1.5 pr-6 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/20 shadow-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
                     >
-                        <div className="relative w-10 h-10 rounded-full border-2 border-pink-400 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(244,114,182,0.5)] group-hover:scale-105 transition-transform">
-                            <img src="logo.png" alt="User" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">Luân Ngu</span>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></span>
-                                <span className="text-gray-200 text-[11px] font-medium uppercase tracking-wider">{userEmotion}</span>
+                        <div className="relative">
+                            <div className="w-12 h-12 rounded-xl border-2 border-pink-500/50 overflow-hidden shadow-lg group-hover:scale-105 transition-transform">
+                                <img src={userData.avatar} alt="User" className="w-full h-full object-cover" />
                             </div>
+                            <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-[9px] font-black text-black px-1.5 py-0.5 rounded-md shadow-md border border-black/10">
+                                LV.{calculateLevel(userData.points)}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <span className="text-white text-sm font-black uppercase tracking-wider drop-shadow-md">{userData.name}</span>
+                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_#4ade80]"></span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-gray-300 text-[10px] font-bold uppercase opacity-80">{calculateEmotion(userData.points)}</span>
+                                <div className="flex items-center gap-1 bg-yellow-500/20 px-2 py-0.5 rounded-full border border-yellow-500/30">
+                                    <span className="text-yellow-400 text-[10px] font-black">{userData.gold.toLocaleString()}</span>
+                                    <span className="text-[10px]">🪙</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                            <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg] group-hover:left-[150%] transition-all duration-700"></div>
                         </div>
                     </div>
 
                     {isProfileOpen && (
                         <>
                             <div className="fixed inset-0 z-[-1]" onClick={() => setIsProfileOpen(false)} />
-                            <div className="w-72 p-6 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                            <div className="w-72 p-6 rounded-[2rem] bg-[#1a1a1a]/90 backdrop-blur-2xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-20 h-20 rounded-full border-2 border-white/30 p-1 mb-3">
-                                        <img src="logo.png" className="w-full h-full rounded-full object-cover" />
+                                    <div className="relative mb-4">
+                                        <div className="w-20 h-20 rounded-3xl border-2 border-white/10 p-1 bg-gradient-to-b from-white/10 to-transparent">
+                                            <img src={userData.avatar} className="w-full h-full rounded-2xl object-cover shadow-2xl" />
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-pink-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">LV.{calculateLevel(userData.points)}</div>
                                     </div>
-                                    <h2 className="text-white font-bold text-xl mb-1">Lữ Khách Phương Xa</h2>
-                                    <p className="text-gray-400 text-xs mb-4 italic">"Mỗi ngày là một cuộc thám hiểm mới"</p>
-                                    <button className="mt-5 w-full py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity">
-                                        NHẬT KÝ HÀNH TRÌNH
-                                    </button>
+                                    <h2 className="text-white font-black text-xl tracking-tight uppercase">{userData.name}</h2>
+                                    <p className="text-pink-400 text-[10px] font-bold mb-4 uppercase tracking-tighter italic px-2">
+                                        "{emotionMessages[calculateEmotion(userData.points)] || "Cư dân Đảo Bình Yên"}"
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-2 w-full mb-5">
+                                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 shadow-inner text-center">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Chỉ số</p>
+                                            <p className="text-blue-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{userData.points} ĐIỂM</p>
+                                        </div>
+                                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 shadow-inner text-center">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Trạng thái</p>
+                                            <p className="text-purple-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{calculateEmotion(userData.points)}</p>
+                                        </div>
+                                    </div>
+                                    <button className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all uppercase">Nhật Ký Hành Trình</button>
                                 </div>
                             </div>
                         </>

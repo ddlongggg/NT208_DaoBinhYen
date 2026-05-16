@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/app/lib/firebaseAdmin';
-
+//Phần này để lưu thông tin sau khi khảo sát survey nha mấy bố
 export async function POST(req: NextRequest) {
   try {
     const sessionCookie = req.cookies.get('session')?.value;
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     if (body.score !== undefined) updateData.lastSurveyScore = body.score;
     if (body.surveyType !== undefined) updateData.lastSurveyType = body.surveyType;
     updateData.updatedAt = new Date().toISOString();
+
 
     await db.collection('users').doc(decodedToken.uid).update(updateData);
     return new NextResponse(null, { status: 204 });
