@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/app/lib/firebaseAdmin';
+import { auth, db } from '@/app/lib/firebaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,15 +16,44 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Tạo user Firebase Auth luôn
+    // Tạo user Firebase Auth
     const userRecord = await auth.createUser({
       email,
       password,
       phoneNumber: phone ? `+84${phone.replace(/^0/, '')}` : undefined,
     });
 
+    // ========================================
+    // TẠO FIRESTORE DOCUMENT VỚI TOÀN BỘ SCHEMA MẶC ĐỊNH
+    // Nguyên tắc: set sẵn ALL fields → chưa có gì = null/0 → update khi cần
+    // ========================================
+    await db.collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email: email,
+      provider: 'password',
+      createdAt: new Date().toISOString(),
+      lastLogin: null,           // → login sẽ cập nhật
+      username: null,            // → survey sẽ cập nhật
+      lastSurveyScore: null,     // → survey sẽ cập nhật
+      lastSurveyType: null,      // → survey sẽ cập nhật
+      topicStreak: 0,            // → daily-checkin server sẽ tính
+      lastCheckinDate: null,     // → daily-checkin sẽ cập nhật
+      updatedAt: null,           // → bất kỳ update nào sẽ ghi
+      seeds: 0,
+      money: 0,
+    });
+
     // Tạo link verify bằng Firebase Admin
-    const verificationLink = await auth.generateEmailVerificationLink(email);
+    let verificationLink: string;
+    try {
+      verificationLink = await auth.generateEmailVerificationLink(email);
+    } catch (linkError) {
+      // Nếu tạo link thất bại → rollback: xóa Auth user + Firestore doc
+      console.error('Lỗi tạo link xác minh:', linkError);
+      await auth.deleteUser(userRecord.uid).catch(() => { });
+      await db.collection('users').doc(userRecord.uid).delete().catch(() => { });
+      return NextResponse.json({ error: 'Không thể tạo link xác minh' }, { status: 500 });
+    }
 
     // Gửi email bằng Gmail SMTP
     const nodemailer = require('nodemailer');
@@ -36,40 +65,40 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log('=== REGISTER DEBUG ===');
-    console.log('Gửi đến:', email);
-    console.log('GMAIL_USER:', process.env.GMAIL_USER);
-    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅' : '❌');
+    try {
+      await transporter.sendMail({
+        from: `"Đảo Bình Yên" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: '🌴 Chạm tay vào bình yên: Xác minh tài khoản của bạn',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 30px; background: #f9f7f4; border-radius: 20px; text-align: center;">
+            <h2 style="color: #4a4036; margin-bottom: 20px;">🌴 Chào mừng bạn đến với Đảo Bình Yên!</h2>
+            
+            <p style="color: #6c5f52; line-height: 1.6; font-size: 15px; text-align: left;">
+              Bạn vừa thực hiện bước đầu tiên để tìm thấy khoảng lặng cho riêng mình. 
+              Để cánh cửa đảo nhỏ chính thức mở ra, bạn vui lòng nhấn vào nút bên dưới để xác nhận địa chỉ email nhé.
+            </p>
 
-    const info = await transporter.sendMail({
-  from: `"Đảo Bình Yên" <${process.env.GMAIL_USER}>`,
-  to: email,
-  // Cập nhật lại tiêu đề cho đồng bộ với nội dung mới
-  subject: '🌴 Chạm tay vào bình yên: Xác minh tài khoản của bạn',
-  html: `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 30px; background: #f9f7f4; border-radius: 20px; text-align: center;">
-      <h2 style="color: #4a4036; margin-bottom: 20px;">🌴 Chào mừng bạn đến với Đảo Bình Yên!</h2>
-      
-      <p style="color: #6c5f52; line-height: 1.6; font-size: 15px; text-align: left;">
-        Bạn vừa thực hiện bước đầu tiên để tìm thấy khoảng lặng cho riêng mình. 
-        Để cánh cửa đảo nhỏ chính thức mở ra, bạn vui lòng nhấn vào nút bên dưới để xác nhận địa chỉ email nhé.
-      </p>
+            <div style="margin: 35px 0;">
+              <a href="${verificationLink}" 
+                 style="background: #6c7a65; color: white; padding: 16px 32px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
+                 Xác minh Email & Bắt đầu thư giãn
+              </a>
+            </div>
 
-      <div style="margin: 35px 0;">
-        <a href="${verificationLink}" 
-           style="background: #6c7a65; color: white; padding: 16px 32px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
-           Xác minh Email & Bắt đầu thư giãn
-        </a>
-      </div>
-
-      <p style="color: #8d7e6d; font-style: italic; margin-top: 25px; font-size: 14px;">
-        Hẹn gặp bạn giữa những thanh âm trong lành của Đảo.
-      </p>
-    </div>
-  `,
-});
-
-    console.log('MAIL SENT:', info.messageId);
+            <p style="color: #8d7e6d; font-style: italic; margin-top: 25px; font-size: 14px;">
+              Hẹn gặp bạn giữa những thanh âm trong lành của Đảo.
+            </p>
+          </div>
+        `,
+      });
+    } catch (mailError) {
+      // Gửi mail thất bại → rollback: xóa Auth user + Firestore doc
+      console.error('Lỗi gửi email:', mailError);
+      await auth.deleteUser(userRecord.uid).catch(() => { });
+      await db.collection('users').doc(userRecord.uid).delete().catch(() => { });
+      return NextResponse.json({ error: 'Không thể gửi email xác minh' }, { status: 500 });
+    }
 
     return NextResponse.json({ message: 'Đã gửi email xác minh' });
   } catch (error: any) {

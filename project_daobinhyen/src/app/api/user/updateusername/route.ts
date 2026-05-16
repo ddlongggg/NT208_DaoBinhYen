@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
       const existing = await db.collection('users')
         .where('username', '==', body.username)
         .get();
-      if (!existing.empty) {
+      const isDuplicate = existing.docs.some(doc => doc.id !== decodedToken.uid);
+      if (isDuplicate) {
         return NextResponse.json({ error: 'Tên này đã được dùng, hãy chọn tên khác!' }, { status: 409 });
       }
       updateData.username = body.username;
