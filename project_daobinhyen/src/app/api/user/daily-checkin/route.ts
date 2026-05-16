@@ -9,37 +9,44 @@ export async function POST(req: NextRequest) {
 
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     
-    // 2. Lấy dữ liệu thân gửi lên
+    // 2. Lấy dữ liệu gửi lên — CHỈ CẦN surveyType, server tự tính streak
     const body = await req.json();
-    const { surveyType, topicStreak, lastScore } = body;
+    const { surveyType } = body;
 
-    // 3. Chuẩn bị Object để cập nhật vào Database
+    if (!surveyType || !['study', 'emotion', 'sleep'].includes(surveyType)) {
+      return NextResponse.json({ error: 'Loại khảo sát không hợp lệ' }, { status: 400 });
+    }
+
+    // 3. Đọc dữ liệu hiện tại để SERVER tự tính topicStreak
+    const userRef = db.collection('users').doc(decodedToken.uid);
+    const userSnap = await userRef.get();
+    
+    if (!userSnap.exists) {
+      return NextResponse.json({ error: 'Không tìm thấy user' }, { status: 404 });
+    }
+
+    const userData = userSnap.data();
+    const currentStreak = userData?.topicStreak ?? 0;
+    const lastType = userData?.lastSurveyType ?? null;
+
+    // Tính streak: cùng chủ đề → +1, đổi chủ đề → reset về 1
+    const newStreak = (surveyType === lastType) ? currentStreak + 1 : 1;
+
+    // 4. Chuẩn bị Object để cập nhật
     const updateData: Record<string, any> = {
-      lastCheckinDate: new Date().toISOString(), // Lưu lại ngày Check-in riêng để tra cứu
+      lastCheckinDate: new Date().toISOString(),
+      lastSurveyType: surveyType,
+      topicStreak: newStreak,
+      updatedAt: new Date().toISOString(),
     };
 
-    // Đẩy thêm biến loại topic check-in: (study | emotion | sleep) thay vì gộp chung là 1 final
-    if (surveyType && ['study', 'emotion', 'sleep'].includes(surveyType)) {
-      updateData.lastSurveyType = surveyType;
-    }
+    // 5. Update vào Firestore
+    await userRef.update(updateData);
 
-    if (topicStreak !== undefined) {
-      updateData.topicStreak = topicStreak;
-    }
-
-    if (lastScore !== undefined) {
-      updateData.lastSurveyScore = lastScore; // Vẫn có thể map với trường có sẵn trước đó
-      // Nếu bạn muốn lưu tách nhỏ riêng điểm thì ghi thêm dạng này:
-      // updateData[`${surveyType}_score`] = lastScore; 
-    }
-
-    // 4. Update thẳng vào Firebase Firestore ở Document User
-    await db.collection('users').doc(decodedToken.uid).update(updateData);
-
-    // 5. Trả về thành công
+    // 6. Trả về thành công (kèm streak mới để client cập nhật UI)
     return NextResponse.json({ 
       message: 'Cập nhật tiến độ Check-in thành công!', 
-      data: updateData 
+      data: { ...updateData, topicStreak: newStreak }
     }, { status: 200 });
 
   } catch (error) {

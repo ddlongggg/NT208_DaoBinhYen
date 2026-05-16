@@ -19,6 +19,14 @@ export default function DynamicIsland() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [userEmotion, setUserEmotion] = useState('Hạnh phúc');
     const [hoveredZone, setHoveredZone] = useState<string | null>(null);
+    const [username, setUsername] = useState('Lữ Khách');
+
+    useEffect(() => {
+        fetch('/api/user/getUserInFo')
+            .then(res => res.json())
+            .then(data => { if (data.username) setUsername(data.username); })
+            .catch(() => { });
+    }, []);
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
     const [selectedZone, setSelectedZone] = useState<{ title: string, path: string, desc: string, img: string } | null>(null);
@@ -171,9 +179,14 @@ export default function DynamicIsland() {
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                         className="group relative flex items-center gap-4 p-1.5 pr-6 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/20 shadow-lg cursor-pointer hover:bg-white/10 transition-all duration-300"
                     >
-                        <div className="relative">
-                            <div className="w-12 h-12 rounded-xl border-2 border-pink-500/50 overflow-hidden shadow-lg group-hover:scale-105 transition-transform">
-                                <img src={userData.avatar} alt="User" className="w-full h-full object-cover" />
+                        <div className="relative w-10 h-10 rounded-full border-2 border-pink-400 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(244,114,182,0.5)] group-hover:scale-105 transition-transform">
+                            <img src="logo.png" alt="User" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">{username}</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></span>
+                                <span className="text-gray-200 text-[11px] font-medium uppercase tracking-wider">{userEmotion}</span>
                             </div>
                             <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-[9px] font-black text-black px-1.5 py-0.5 rounded-md shadow-md border border-black/10">
                                 LV.{calculateLevel(userData.points)}

@@ -234,23 +234,22 @@ export default function DailyCheckinPage() {
     playClickSound();
 
     if (choiceValue && userData) {
-      const newStreak = (choiceValue === userData.lastSurveyType) ? userData.topicStreak + 1 : 1;
-      
       try {
-        await fetch('/api/user/daily-checkin', {
+        const res = await fetch('/api/user/daily-checkin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             surveyType: choiceValue,
-            topicStreak: newStreak,
-            lastScore: userData.lastScore 
+            // Server tự tính topicStreak — client không cần gửi
           }),
         });
+
+        const result = await res.json();
 
         setUserData({
           ...userData,
           lastSurveyType: choiceValue as 'study' | 'emotion' | 'sleep',
-          topicStreak: newStreak
+          topicStreak: result.data?.topicStreak ?? userData.topicStreak
         });
       } catch (error) {
         console.error('Lỗi khi lưu check-in:', error);

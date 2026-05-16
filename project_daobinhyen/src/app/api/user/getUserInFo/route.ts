@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       username: data?.username ?? null,
       lastSurveyScore: data?.lastSurveyScore ?? null,
       lastSurveyType: data?.lastSurveyType ?? null,
-      lastLoginDate: data?.lastCheckinDate ?? data?.lastLogin ?? new Date().toISOString(),
+      lastLoginDate: data?.lastCheckinDate ?? data?.createdAt ?? new Date().toISOString(),
       topicStreak: data?.topicStreak ?? 0,
     });
   } catch {
