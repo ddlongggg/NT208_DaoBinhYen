@@ -3,14 +3,26 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import LighthouseModalContainer, { ModalTab } from './components/modals/LighthouseModalContainer';
+import DongHoModalContainer from './components/modals/DongHoTapTrung/DongHoModalContainer';
+import GlobalAudioPlayer from './components/GlobalAudioPlayer';
+import RadioModalContainer from './components/modals/RadioChuaLanh/RadioModalContainer';
+import { useAudioStore } from '@/app/api/user/lighthouse/store/useAudioStore';
+import { GENRES } from '@/app/api/user/lighthouse/data/radioData';
 
 export default function HaiDang() {
     const [floor, setFloor] = useState<1 | 2>(1);
-    const [currentHour, setCurrentHour] = useState<number>(12); // Default to noon
+    const [currentHour, setCurrentHour] = useState<number | null>(null); // Null initially for hydration safety
+    const [transitionDuration, setTransitionDuration] = useState<'duration-0' | 'duration-[2000ms]'>('duration-0');
 
     // Modal Controller States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeModalTab, setActiveModalTab] = useState<ModalTab>('hai-do');
+    const [isDongHoOpen, setIsDongHoOpen] = useState(false);
+    const [isRadioOpen, setIsRadioOpen] = useState(false);
+
+    // Audio Store
+    const { currentGenre } = useAudioStore();
+    const genreDef = currentGenre ? GENRES.find(g => g.id === currentGenre) : null;
 
     const openModal = (tab: ModalTab) => {
         setActiveModalTab(tab);
@@ -32,13 +44,27 @@ export default function HaiDang() {
     };
 
     useEffect(() => {
+        // Set local hour immediately on client side to avoid waiting for fetch
+        const localHour = new Date().getHours();
+        setCurrentHour(localHour);
+
         fetchTime();
+
+        // Allow initial mount to render instantly, then enable 2-second transitions
+        const timeout = setTimeout(() => {
+            setTransitionDuration('duration-[2000ms]');
+        }, 100);
+
         const interval = setInterval(fetchTime, 60000); // Update every minute
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
     }, []);
 
     // Get time stage based on hour
-    const getTimeStage = (h: number) => {
+    const getTimeStage = (h: number | null) => {
+        if (h === null) return 'noon'; // Default to noon during hydration/initial load
         if (h >= 4 && h < 6) return 'dawn'; // LHDawn.png
         if (h >= 6 && h < 11) return 'morning'; // LHMorning.png
         if (h >= 11 && h < 14) return 'noon'; // LHNoon.png
@@ -58,6 +84,8 @@ export default function HaiDang() {
 
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black text-white">
+            <GlobalAudioPlayer floor={floor} />
+
             {/* --- LỚP NỀN (BACKGROUND LAYERS) --- */}
             {/* Tầng 1: Luôn giữ nguyên, fade out khi lên Tầng 2 */}
             <div
@@ -136,15 +164,19 @@ export default function HaiDang() {
                     </div>
                 </div>
 
-                {/* Nút thoát về Homepage */}
+                {/* 7. Lối ra ngoài (Gần cầu thang, mép phải) */}
                 <Link
-                    href="/"
-                    className="absolute z-20 cursor-pointer p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all"
-                    style={{ top: '4%', left: '2%' }}
+                    href="/homepage"
+                    className="absolute cursor-pointer group z-20 flex items-center justify-center"
+                    style={{ top: '90%', left: '90%', width: '12%', height: '10%' }}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
+                    <div className="absolute pointer-events-none animate-pulse">
+                        <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+                    </div>
+
+                    <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+                        <h3 className="text-white font-bold text-sm whitespace-nowrap">Ra khỏi hải đăng</h3>
+                    </div>
                 </Link>
             </div>
 
@@ -154,7 +186,7 @@ export default function HaiDang() {
                 {Object.entries(backgrounds).map(([stage, src]) => (
                     <div
                         key={stage}
-                        className={`absolute inset-0 transition-opacity duration-[2000ms] ease-in-out ${stage === timeStage ? 'opacity-100' : 'opacity-0'}`}
+                        className={`absolute inset-0 transition-opacity ease-in-out ${transitionDuration} ${stage === timeStage ? 'opacity-100' : 'opacity-0'}`}
                         style={{
                             backgroundImage: `url('${src}')`,
                             backgroundSize: 'cover',
@@ -164,10 +196,20 @@ export default function HaiDang() {
                     />
                 ))}
 
+                {/* --- LỚP PHỦ ÁNH SÁNG THEO NHẠC --- */}
+                <div
+                    className="absolute inset-0 transition-colors duration-1000 ease-in-out mix-blend-overlay pointer-events-none"
+                    style={{
+                        backgroundColor: genreDef ? genreDef.colorTheme : 'transparent',
+                        opacity: genreDef ? 0.4 : 0
+                    }}
+                />
+
                 {/* --- CÁC VÙNG CLICK CỦA TẦNG 2 --- */}
 
                 {/* 1. Đồng hồ tập trung (Đồng hồ cát) */}
                 <div
+                    onClick={() => setIsDongHoOpen(true)}
                     className="absolute cursor-pointer group z-30"
                     style={{ top: '58%', left: '47%', width: '6%', height: '26%' }}
                 >
@@ -178,6 +220,7 @@ export default function HaiDang() {
 
                 {/* 2. Tần số chữa lành (Radio gỗ) */}
                 <div
+                    onClick={() => setIsRadioOpen(true)}
                     className="absolute cursor-pointer group z-30"
                     style={{ top: '54.5%', left: '55.5%', width: '13.5%', height: '19%' }}
                 >
@@ -200,24 +243,26 @@ export default function HaiDang() {
                         <h3 className="text-white font-bold text-sm whitespace-nowrap">Lối xuống tầng 1</h3>
                     </div>
                 </div>
-                
-                {/* Nút thoát về Homepage (nếu người dùng muốn thoát luôn ở tầng 2) */}
-                <Link
-                    href="/"
-                    className="absolute z-30 cursor-pointer p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all"
-                    style={{ top: '4%', left: '2%' }}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                </Link>
+
             </div>
 
-            {/* Khung Modal Container Đa Nhiệm */}
-            <LighthouseModalContainer 
-                isOpen={isModalOpen} 
-                initialTab={activeModalTab} 
-                onClose={() => setIsModalOpen(false)} 
+            {/* Modal Đồng hồ Tập Trung – riêng biệt */}
+            <DongHoModalContainer
+                isOpen={isDongHoOpen}
+                onClose={() => setIsDongHoOpen(false)}
+            />
+
+            {/* Khung Modal Container Đa Nhiệm (các tab còn lại) */}
+            <LighthouseModalContainer
+                isOpen={isModalOpen}
+                initialTab={activeModalTab}
+                onClose={() => setIsModalOpen(false)}
+            />
+
+            {/* Khung Modal Radio Chữa Lành */}
+            <RadioModalContainer
+                isOpen={isRadioOpen}
+                onClose={() => setIsRadioOpen(false)}
             />
         </main>
     );

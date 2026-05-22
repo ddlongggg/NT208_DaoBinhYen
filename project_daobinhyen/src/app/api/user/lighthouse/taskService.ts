@@ -1,15 +1,18 @@
 import { db } from '@/app/lib/firebase';
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  Timestamp 
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  increment,
+  query,
+  where,
+  orderBy,
+  Timestamp
 } from 'firebase/firestore';
 
 // Types
@@ -53,11 +56,11 @@ export const addTask = async (taskData: Omit<TaskData, 'id' | 'createdAt'>) => {
 export const getTasks = async (userId: string, type?: TaskType) => {
   try {
     let q = query(
-      collection(db, TASKS_COLLECTION), 
+      collection(db, TASKS_COLLECTION),
       where("userId", "==", userId),
       orderBy("endDate", "asc")
     );
-    
+
     if (type) {
       q = query(q, where("type", "==", type));
     }
@@ -67,7 +70,7 @@ export const getTasks = async (userId: string, type?: TaskType) => {
     querySnapshot.forEach((doc) => {
       tasks.push({ id: doc.id, ...doc.data() } as TaskData);
     });
-    
+
     return tasks;
   } catch (error) {
     console.error("Error getting tasks: ", error);
@@ -100,7 +103,18 @@ export const deleteTask = async (taskId: string) => {
 // 5. Xóa Vĩnh Viễn Nhiều Task (Batch Delete)
 export const deleteMultipleTasks = async (taskIds: string[]) => {
   try {
-    const deletePromises = taskIds.map(id => deleteDoc(doc(db, TASKS_COLLECTION, id)));
+    if (taskIds.length === 0) return;
+    
+    const allLinkedTaskIds: string[] = [];
+    for (let i = 0; i < taskIds.length; i += 10) {
+      const chunk = taskIds.slice(i, i + 10);
+      const q = query(collection(db, TASKS_COLLECTION), where("longTaskId", "in", chunk));
+      const snap = await getDocs(q);
+      snap.forEach(doc => allLinkedTaskIds.push(doc.id));
+    }
+    
+    const finalIdsToDelete = [...taskIds, ...allLinkedTaskIds];
+    const deletePromises = finalIdsToDelete.map(id => deleteDoc(doc(db, TASKS_COLLECTION, id)));
     await Promise.all(deletePromises);
   } catch (error) {
     console.error("Error batch deleting tasks: ", error);
@@ -136,13 +150,51 @@ export const getCommitsByTask = async (taskId: string) => {
     querySnapshot.forEach((doc) => {
       commits.push({ id: doc.id, ...doc.data() } as CommitData);
     });
-    
+
     // Sắp xếp commits mới nhất lên đầu
     commits.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    
+
     return commits;
   } catch (error) {
     console.error("Error getting commits: ", error);
     throw error;
+  }
+};
+
+// Thêm một commit mới
+export const addCommit = async (commitData: Omit<CommitData, 'id' | 'createdAt'>) => {
+  try {
+    const docRef = await addDoc(collection(db, COMMITS_COLLECTION), {
+      ...commitData,
+      createdAt: Timestamp.now()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding commit: ", error);
+    throw error;
+  }
+};
+
+// --- GOLD / CURRENCY MANAGEMENT ---
+export const getGold = async (userId: string) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      return snap.data()?.gold || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error("Error getting gold: ", error);
+    return 0;
+  }
+};
+
+export const addGold = async (userId: string, amount: number) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await setDoc(userRef, { gold: increment(amount) }, { merge: true });
+  } catch (error) {
+    console.error("Error adding gold: ", error);
   }
 };

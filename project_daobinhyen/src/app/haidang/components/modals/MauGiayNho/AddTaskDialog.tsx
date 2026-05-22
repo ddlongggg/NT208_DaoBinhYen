@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar as CalendarIcon, Save } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -40,7 +40,22 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const dateAudioRef = useRef<HTMLAudioElement | null>(null);
+  const clickAudioRef = useRef<HTMLAudioElement | null>(null);
+  const saveAudioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
+    dateAudioRef.current = new Audio('/Lighthouse/SoundEffect/telescope-slide.mp3');
+    if (dateAudioRef.current) dateAudioRef.current.volume = 0.4;
+    
+    clickAudioRef.current = new Audio('/Lighthouse/SoundEffect/hit-table.mp3');
+    if (clickAudioRef.current) clickAudioRef.current.volume = 0.4;
+    
+    saveAudioRef.current = new Audio('/Lighthouse/SoundEffect/stamp.mp3');
+    if (saveAudioRef.current) saveAudioRef.current.volume = 0.4;
+
     // Tải danh sách Task Lớn (nếu mở ở tab Mẩu giấy nhỏ)
     if (type === 'short') {
       getTasks(userId, 'long').then(res => setAvailableLongTasks(res)).catch(console.error);
@@ -51,6 +66,29 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
     e.preventDefault();
     if (!title) return;
     
+    // VALIDATION SỐ NGÀY
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (type === 'short') {
+      if (diffDays < 1 || diffDays > 3) {
+        setErrorMsg('Hải trình ngắn hạn chỉ được kéo dài từ 1 đến 3 ngày!');
+        return;
+      }
+    } else if (type === 'long') {
+      if (diffDays < 7 || diffDays > 730) {
+        setErrorMsg('Hải trình dài hạn (Nhật Ký Neo Đậu) phải có thời hạn từ 1 tuần (7 ngày) đến 2 năm (730 ngày)!');
+        return;
+      }
+    }
+
+    setErrorMsg(null);
+
     setIsSubmitting(true);
     try {
       await addTask({
@@ -61,15 +99,16 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
         type,
         difficulty,
         status: 'in_progress',
-        startDate: Timestamp.fromDate(new Date(startDate)),
-        endDate: Timestamp.fromDate(new Date(endDate)),
+        startDate: Timestamp.fromDate(start),
+        endDate: Timestamp.fromDate(end),
         longTaskId: longTaskId ? longTaskId : null,
       });
+      saveAudioRef.current?.play();
       onRefresh();
       onClose();
     } catch (error) {
       console.error(error);
-      alert("Lỗi khi thêm task!");
+      setErrorMsg("Lỗi khi thêm task!");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +161,7 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
               
               <div 
                 className="w-full p-3 rounded-lg border border-[#D2B48C] bg-white text-[#5C3A21] flex justify-between items-center cursor-pointer hover:border-[#8B5A2B] transition shadow-sm"
-                onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)}
+                onClick={() => { clickAudioRef.current?.play(); setIsIconDropdownOpen(!isIconDropdownOpen); }}
               >
                 <div className="flex items-center gap-3">
                   {React.createElement((LucideIcons as any)[icon] || LucideIcons.FileText, { size: 18, className: "text-[#8B5A2B]" })}
@@ -144,7 +183,7 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
                           className={`px-4 py-3 hover:bg-[#E8D4BB]/60 cursor-pointer flex items-center justify-between text-[#5C3A21] transition ${
                             isSelected ? 'bg-[#FFFBF5] font-bold border-l-4 border-[#8B5A2B]' : 'border-l-4 border-transparent'
                           }`}
-                          onClick={() => { setIcon(ic.name); setIsIconDropdownOpen(false); }}
+                          onClick={() => { clickAudioRef.current?.play(); setIcon(ic.name); setIsIconDropdownOpen(false); }}
                         >
                           <span>{ic.label}</span>
                           <IconComp size={20} className={isSelected ? 'text-[#8B5A2B]' : 'text-gray-400'} />
@@ -179,6 +218,13 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
                   type="date" 
                   required
                   className="w-full p-3 pl-10 rounded-lg border border-[#D2B48C] bg-white text-[#5C3A21] placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#8B5A2B] cursor-pointer"
+                  onClick={() => {
+                    if (dateAudioRef.current) {
+                      dateAudioRef.current.currentTime = 0;
+                      dateAudioRef.current.play();
+                      setTimeout(() => dateAudioRef.current?.pause(), 1000);
+                    }
+                  }}
                   value={startDate} onChange={(e) => setStartDate(e.target.value)}
                 />
                 <CalendarIcon className="absolute left-3 top-3.5 text-[#8B5A2B]" size={18} />
@@ -193,6 +239,13 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
                   type="date" 
                   required
                   className="w-full p-3 pl-10 rounded-lg border border-[#D2B48C] bg-white text-[#5C3A21] placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#8B5A2B] cursor-pointer"
+                  onClick={() => {
+                    if (dateAudioRef.current) {
+                      dateAudioRef.current.currentTime = 0;
+                      dateAudioRef.current.play();
+                      setTimeout(() => dateAudioRef.current?.pause(), 1000);
+                    }
+                  }}
                   value={endDate} onChange={(e) => setEndDate(e.target.value)}
                 />
                 <CalendarIcon className="absolute left-3 top-3.5 text-[#8B5A2B]" size={18} />
@@ -214,6 +267,12 @@ export default function AddTaskDialog({ onClose, onRefresh, type, userId }: AddT
                 ))}
               </select>
               <p className="text-xs text-gray-500 mt-1 italic">* Liên kết mẩu giấy này với mục tiêu dài hạn trong Nhật Ký Neo Đậu.</p>
+            </div>
+          )}
+          {errorMsg && (
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded text-sm font-medium flex items-center gap-2 shadow-sm">
+              <LucideIcons.AlertOctagon size={18} className="text-red-500" />
+              {errorMsg}
             </div>
           )}
         </form>
