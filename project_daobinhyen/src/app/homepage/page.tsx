@@ -20,12 +20,41 @@ export default function DynamicIsland() {
     const [userEmotion, setUserEmotion] = useState('Hạnh phúc');
     const [hoveredZone, setHoveredZone] = useState<string | null>(null);
     const [username, setUsername] = useState('Lữ Khách');
+    const [userData, setUserData] = useState({
+        username: 'Đang tải...',
+        lastSurveyScore: 0,
+        money: 0,
+        seeds: 0,
+        avatar: 'logo.png'
+    });
 
     useEffect(() => {
-        fetch('/api/user/getUserInFo')
-            .then(res => res.json())
-            .then(data => { if (data.username) setUsername(data.username); })
-            .catch(() => { });
+        const fetchUserData = async () => {
+            try {
+                const res = await fetch('/api/user/getUserInFo');
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Đồng bộ cả username cũ lẫn cụm dữ liệu mới
+                    if (data.username) setUsername(data.username);
+
+                    setUserData({
+                        username: data.username || 'Lữ Khách',
+                        lastSurveyScore: Number(data.lastSurveyScore ?? 0),
+                        money: Number(data.money ?? 0),
+                        seeds: Number(data.seeds ?? 0),
+                        avatar: 'logo.png' // Hoặc data.avatar nếu sau này bạn bổ sung vào Firebase
+                    });
+
+                    // Tự động tính toán cảm xúc dựa trên lastSurveyScore vừa lấy về
+                    setUserEmotion(calculateEmotion(Number(data.lastSurveyScore ?? 0)));
+                }
+            } catch (error) {
+                console.error("Lỗi gọi API profile:", error);
+            }
+        };
+
+        fetchUserData();
     }, []);
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
@@ -33,12 +62,6 @@ export default function DynamicIsland() {
 
 
     // --- PHẦN MỚI: Quản lý dữ liệu người dùng ---
-    const [userData, setUserData] = useState({
-        name: 'Đang tải...',
-        points: 0,
-        gold: 0,
-        avatar: 'logo.png'
-    });
 
     // Hàm tính Level từ Points (Ví dụ: mỗi 100 điểm lên 1 level)
     const calculateLevel = (pts: number) => Math.floor(pts / 10) + 1;
@@ -56,28 +79,6 @@ export default function DynamicIsland() {
         if (pts < 90) return 'Thăng Hoa Thuần Khiết';
         return 'Đại Ngộ Thiên Đường'; // Trên 900 điểm
     };
-
-    // Gọi API lấy dữ liệu từ Backend
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                // Thay 'USER_ID' bằng ID thực tế của bạn
-                const res = await fetch('/api/user/profile/USER_ID');
-                const data = await res.json();
-                if (res.ok) {
-                    setUserData({
-                        name: data.name,
-                        points: data.points,
-                        gold: data.gold,
-                        avatar: 'logo.png'
-                    });
-                }
-            } catch (error) {
-                console.error("Lỗi gọi API profile:", error);
-            }
-        };
-        fetchUserData();
-    }, []);
 
     const emotionMessages: Record<string, string> = {
         'Vực Thẳm Tâm Linh': 'Trạng thái cảm xúc tồi tệ nhất, có lẽ bạn đang gặp phải rất nhiều vấn đề trong cuộc sống.',
@@ -183,25 +184,14 @@ export default function DynamicIsland() {
                             <img src="logo.png" alt="User" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">{username}</span>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></span>
-                                <span className="text-gray-200 text-[11px] font-medium uppercase tracking-wider">{userEmotion}</span>
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-[9px] font-black text-black px-1.5 py-0.5 rounded-md shadow-md border border-black/10">
-                                LV.{calculateLevel(userData.points)}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <span className="text-white text-sm font-black uppercase tracking-wider drop-shadow-md">{userData.name}</span>
+                                <span className="text-white text-sm font-black uppercase tracking-wider drop-shadow-md">{userData.username}</span>
                                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_#4ade80]"></span>
                             </div>
                             <div className="flex items-center gap-3 mt-0.5">
-                                <span className="text-gray-300 text-[10px] font-bold uppercase opacity-80">{calculateEmotion(userData.points)}</span>
+                                <span className="text-gray-300 text-[10px] font-bold uppercase opacity-80">{calculateEmotion(userData.lastSurveyScore)}</span>
                                 <div className="flex items-center gap-1 bg-yellow-500/20 px-2 py-0.5 rounded-full border border-yellow-500/30">
-                                    <span className="text-yellow-400 text-[10px] font-black">{userData.gold.toLocaleString()}</span>
+                                    <span className="text-yellow-400 text-[10px] font-black">{userData.money.toLocaleString()}</span>
                                     <span className="text-[10px]">🪙</span>
                                 </div>
                             </div>
@@ -220,21 +210,21 @@ export default function DynamicIsland() {
                                         <div className="w-20 h-20 rounded-3xl border-2 border-white/10 p-1 bg-gradient-to-b from-white/10 to-transparent">
                                             <img src={userData.avatar} className="w-full h-full rounded-2xl object-cover shadow-2xl" />
                                         </div>
-                                        <div className="absolute -bottom-2 -right-2 bg-pink-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">LV.{calculateLevel(userData.points)}</div>
+                                        <div className="absolute -bottom-2 -right-2 bg-pink-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">LV.{calculateLevel(userData.lastSurveyScore)}</div>
                                     </div>
-                                    <h2 className="text-white font-black text-xl tracking-tight uppercase">{userData.name}</h2>
+                                    <h2 className="text-white font-black text-xl tracking-tight uppercase">{userData.username}</h2>
                                     <p className="text-pink-400 text-[10px] font-bold mb-4 uppercase tracking-tighter italic px-2">
-                                        "{emotionMessages[calculateEmotion(userData.points)] || "Cư dân Đảo Bình Yên"}"
+                                        "{emotionMessages[calculateEmotion(userData.lastSurveyScore)] || "Cư dân Đảo Bình Yên"}"
                                     </p>
 
                                     <div className="grid grid-cols-2 gap-2 w-full mb-5">
                                         <div className="bg-white/10 p-3 rounded-2xl border border-white/10 shadow-inner text-center">
                                             <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Chỉ số</p>
-                                            <p className="text-blue-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{userData.points} ĐIỂM</p>
+                                            <p className="text-blue-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{userData.lastSurveyScore} ĐIỂM</p>
                                         </div>
                                         <div className="bg-white/10 p-3 rounded-2xl border border-white/10 shadow-inner text-center">
                                             <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Trạng thái</p>
-                                            <p className="text-purple-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{calculateEmotion(userData.points)}</p>
+                                            <p className="text-purple-400 text-[13px] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{calculateEmotion(userData.lastSurveyScore)}</p>
                                         </div>
                                     </div>
                                     <button className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all uppercase">Nhật Ký Hành Trình</button>

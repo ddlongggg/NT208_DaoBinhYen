@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
       lastSurveyType: data?.lastSurveyType ?? null,
       lastLoginDate: data?.lastCheckinDate ?? data?.createdAt ?? new Date().toISOString(),
       topicStreak: data?.topicStreak ?? 0,
+      money: data?.money ?? 0,
+      seeds: data?.seeds ?? 0,
     });
   } catch {
     return NextResponse.json({ error: 'Lỗi xác thực' }, { status: 401 });
