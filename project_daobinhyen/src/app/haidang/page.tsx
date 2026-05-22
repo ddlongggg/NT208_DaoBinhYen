@@ -6,6 +6,7 @@ import LighthouseModalContainer, { ModalTab } from './components/modals/Lighthou
 import DongHoModalContainer from './components/modals/DongHoTapTrung/DongHoModalContainer';
 import GlobalAudioPlayer from './components/GlobalAudioPlayer';
 import RadioModalContainer from './components/modals/RadioChuaLanh/RadioModalContainer';
+import GioiThieuModalContainer from './components/modals/GioiThieuModalContainer';
 import { useAudioStore } from '@/app/api/user/lighthouse/store/useAudioStore';
 import { GENRES } from '@/app/api/user/lighthouse/data/radioData';
 
@@ -19,6 +20,7 @@ export default function HaiDang() {
     const [activeModalTab, setActiveModalTab] = useState<ModalTab>('hai-do');
     const [isDongHoOpen, setIsDongHoOpen] = useState(false);
     const [isRadioOpen, setIsRadioOpen] = useState(false);
+    const [isGioiThieuOpen, setIsGioiThieuOpen] = useState(false);
 
     // Audio Store
     const { currentGenre } = useAudioStore();
@@ -156,6 +158,7 @@ export default function HaiDang() {
 
                 {/* 6. Giới thiệu (Các cuộn giấy đứng phía sau cạnh đống củi) */}
                 <div
+                    onClick={() => setIsGioiThieuOpen(true)}
                     className="absolute cursor-pointer group z-20"
                     style={{ top: '53%', left: '38%', width: '6%', height: '12%' }}
                 >
@@ -263,6 +266,12 @@ export default function HaiDang() {
             <RadioModalContainer
                 isOpen={isRadioOpen}
                 onClose={() => setIsRadioOpen(false)}
+            />
+
+            {/* Modal Giới Thiệu – riêng biệt */}
+            <GioiThieuModalContainer
+                isOpen={isGioiThieuOpen}
+                onClose={() => setIsGioiThieuOpen(false)}
             />
         </main>
     );
