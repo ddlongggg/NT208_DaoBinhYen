@@ -17,6 +17,9 @@ const HoNuocPage = () => {
   const [isClient, setIsClient] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
+  //Quản lí nhạc nền
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const fallbackMessages = [
     "Nhìn sâu vào mặt hồ, bạn có nhìn thấy một tâm hồn đã đi qua biết bao ghềnh thác nhưng chưa một lần bỏ cuộc? Những vết hằn tháng năm không làm bạn bớt lấp lánh, chúng là minh chứng cho sự kiên cường của riêng bạn. Hãy để làn nước mát dịu này ôm lấy toàn bộ sự mỏi mệt, xoa dịu đi những lo toan mà bạn đang gồng gánh trên vai suốt thời gian qua. Bạn xứng đáng được yêu thương, được trân trọng, và hơn hết, xứng đáng có một khoảng lặng bình yên ngay lúc này.",
     "Mặt hồ yên ả dịu dàng như chính bản chất con người bạn khi trút bỏ đi những áp lực của thế giới ngoài kia. Đừng vội vã, hãy hít một hơi thật sâu. Thế giới có thể đòi hỏi bạn phải hoàn hảo, nhưng nơi đây chỉ cần bạn là chính mình – nguyên bản, chân thật và tràn đầy giá trị. Ngày hôm nay, dù có điều gì xảy ra, hãy mỉm cười với bóng hình phản chiếu trong nước, bởi vì tồn tại của bạn đã là một điều vô cùng kỳ diệu rồi."
@@ -24,6 +27,31 @@ const HoNuocPage = () => {
 
   useEffect(() => {
     setIsClient(true);
+
+    // 1. Tải trước file nhạc vào bộ nhớ khi trang được nạp
+    const audio = new Audio('/audio/healing-bg.m4a'); 
+    audio.loop = true; // Cho nhạc lặp đi lặp lại vô tận
+    audio.volume = 0.3; // Âm lượng vừa phải du dương
+    audioRef.current = audio;
+
+    // 2. 🚀 HÀM TỰ ĐỘNG PHÁT NHẠC NGAY KHI VÀO TRANG
+    const playAudio = () => {
+      audio.play().then(() => {
+        // Nếu phát thành công, gỡ bỏ các sự kiện lắng nghe tương tác để tránh kích hoạt lại
+        window.removeEventListener('click', playAudio);
+        window.removeEventListener('touchstart', playAudio);
+      }).catch(err => {
+        console.log("Trình duyệt chặn autoplay, chờ người dùng click/chạm để phát:", err);
+      });
+    };
+
+    // Chạy thử lệnh phát ngay lập tức
+    playAudio();
+
+    // Nếu trình duyệt chặn, lắng nghe tương tác đầu tiên của người dùng để phát bù nhạc ngay
+    window.addEventListener('click', playAudio);
+    window.addEventListener('touchstart', playAudio);
+
     const checkTime = () => {
         const hour = new Date().getHours();
         if (hour >= 0 && hour < 5) setSession('dem');
@@ -34,7 +62,13 @@ const HoNuocPage = () => {
       };
       checkTime(); 
       const timer = setInterval(checkTime, 60000);
-      return () => clearInterval(timer);  
+      return () => {
+        clearInterval(timer);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+      };  
   }, []);
 
   const bgImages: Record<TimeSession, string> = {
@@ -161,7 +195,7 @@ const HoNuocPage = () => {
   if (!isClient) return null;
 
   return (
-    <main 
+    <div 
       className="relative min-h-screen w-full flex items-center justify-center bg-cover bg-center overflow-hidden"
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
@@ -297,7 +331,7 @@ const HoNuocPage = () => {
         <span className="group-hover:-translate-x-1 transition-transform">←</span>
         <span className="font-medium text-sm">Rời khỏi hồ nước</span>
       </button>
-    </main>
+    </div>
   );
 };
 
