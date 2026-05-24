@@ -1,15 +1,16 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import * as faceapi from 'face-api.js';
 
 type TimeSession = 'dem' | 'rangsang' | 'truagat' | 'chieumuon';
 
 const HoNuocPage = () => {
   const router = useRouter();
   const [session, setSession] = useState<TimeSession>('truagat');
-  const [status, setStatus] = useState<'idle' | 'watching' | 'healing'>('idle');
+  const [status, setStatus] = useState<'idle' | 'preparing' | 'watching' | 'healing'>('idle');  
   const [message, setMessage] = useState("");
   const [capturedImg, setCapturedImg] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -20,104 +21,200 @@ const HoNuocPage = () => {
   //Quản lí nhạc nền
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fallbackMessages = [
-    "Nhìn sâu vào mặt hồ, bạn có nhìn thấy một tâm hồn đã đi qua biết bao ghềnh thác nhưng chưa một lần bỏ cuộc? Những vết hằn tháng năm không làm bạn bớt lấp lánh, chúng là minh chứng cho sự kiên cường của riêng bạn. Hãy để làn nước mát dịu này ôm lấy toàn bộ sự mỏi mệt, xoa dịu đi những lo toan mà bạn đang gồng gánh trên vai suốt thời gian qua. Bạn xứng đáng được yêu thương, được trân trọng, và hơn hết, xứng đáng có một khoảng lặng bình yên ngay lúc này.",
-    "Mặt hồ yên ả dịu dàng như chính bản chất con người bạn khi trút bỏ đi những áp lực của thế giới ngoài kia. Đừng vội vã, hãy hít một hơi thật sâu. Thế giới có thể đòi hỏi bạn phải hoàn hảo, nhưng nơi đây chỉ cần bạn là chính mình – nguyên bản, chân thật và tràn đầy giá trị. Ngày hôm nay, dù có điều gì xảy ra, hãy mỉm cười với bóng hình phản chiếu trong nước, bởi vì tồn tại của bạn đã là một điều vô cùng kỳ diệu rồi."
-  ];
+  const fallbackEmotionsMessages: Record<string, string[]> = {
+    happy: [
+      "Mặt hồ nhìn thấy nụ cười rạng rỡ của bạn. Hãy giữ ngọn lửa lạc quan này và làm chỗ dựa tinh thần cho chính mình nhé, nụ cười của bạn thực sự rất đẹp.",
+      "Niềm vui lan tỏa từ bạn gợn lên những làn sóng hạnh phúc trên mặt hồ tĩnh lặng."
+    ],
+    sad: [
+      "Ánh mắt bạn phảng phất một chút đượm buồn và mỏi mệt. Không sao cả, nơi mặt hồ tĩnh lặng này, bạn được phép trút bỏ sự mạnh mẽ để làn nước xoa dịu tâm hồn.",
+      "Nỗi buồn của bạn, mặt hồ xin được lắng nghe và ôm lấy thật dịu dàng."
+    ],
+    neutral: [
+      "Sự điềm tĩnh và sâu lắng trong tâm hồn bạn đang phản chiếu rõ nét trên mặt hồ. Bạn kiên cường và vững chãi hơn những gì bản thân tự nhìn nhận rất nhiều."
+    ],
+    angry: [
+      "Có điều gì ngoài kia đang làm bạn bực dọc và căng thẳng sao? Hãy hít một hơi thật sâu, để tiếng nước chảy hạ hỏa ngọn lửa trong lòng bạn xuống nhé."
+    ],
+    surprised: [
+      "Mặt hồ cảm nhận được sự bất ngờ và xao động trong ánh mắt bạn. Hãy thả lỏng lồng ngực, những điều bất định ngoài kia rồi sẽ sớm qua đi và nhường chỗ cho sự bình yên."
+    ],
+    fearful: [
+      "Một chút lo âu và bồn chồn đang gợn sóng trong tâm trí bạn. Đừng sợ hãi, mặt hồ tĩnh lặng này luôn ở đây để bao bọc và chở che cho bạn trước những giông bão."
+    ],
+    default: [
+      "Mặt hồ yên ả dịu dàng nhìn ngắm bóng hình bạn. Dù thế giới ngoài kia có ra sao, nơi đây luôn dang rộng vòng tay đón nhận con người nguyên bản của bạn."
+    ]
+  };
 
   useEffect(() => {
     setIsClient(true);
-
-    // 1. Tải trước file nhạc vào bộ nhớ khi trang được nạp
+    // Tải trước file nhạc vào bộ nhớ khi trang được nạp
     const audio = new Audio('/audio/healing-bg.m4a'); 
-    audio.loop = true; // Cho nhạc lặp đi lặp lại vô tận
-    audio.volume = 0.3; // Âm lượng vừa phải du dương
+    audio.loop = true; 
+    audio.volume = 0.3; 
     audioRef.current = audio;
 
-    // 2. 🚀 HÀM TỰ ĐỘNG PHÁT NHẠC NGAY KHI VÀO TRANG
     const playAudio = () => {
       audio.play().then(() => {
-        // Nếu phát thành công, gỡ bỏ các sự kiện lắng nghe tương tác để tránh kích hoạt lại
         window.removeEventListener('click', playAudio);
         window.removeEventListener('touchstart', playAudio);
       }).catch(err => {
-        console.log("Trình duyệt chặn autoplay, chờ người dùng click/chạm để phát:", err);
+        console.log("Trình duyệt chặn autoplay", err);
       });
     };
 
-    // Chạy thử lệnh phát ngay lập tức
     playAudio();
-
-    // Nếu trình duyệt chặn, lắng nghe tương tác đầu tiên của người dùng để phát bù nhạc ngay
     window.addEventListener('click', playAudio);
     window.addEventListener('touchstart', playAudio);
 
-    const checkTime = () => {
-        const hour = new Date().getHours();
-        if (hour >= 0 && hour < 5) setSession('dem');
-        else if (hour >= 5 && hour < 7) setSession('rangsang');
-        else if (hour >= 7 && hour < 15) setSession('truagat');
-        else if (hour >= 15 && hour < 18) setSession('chieumuon');
-        else setSession('dem');
-      };
-      checkTime(); 
-      const timer = setInterval(checkTime, 60000);
-      return () => {
-        clearInterval(timer);
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-      };  
+    let timer: NodeJS.Timeout;
+
+    // Tự động tải trước Bộ ba Model AI (Tiny) ngay khi nạp trang để không bị delay khi chụp
+    const loadModelsAndInit = async () => {
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68TinyNet.loadFromUri('/models');
+        await faceapi.nets.faceExpressionNet.loadFromUri('/models');
+        console.log("Bộ ba AI Tiny Models đã nạp thành công");
+        
+        // Khởi tạo thời gian sau khi AI đã sẵn sàng
+        const checkTime = () => {
+          const hour = new Date().getHours();
+          if (hour >= 0 && hour < 5) setSession('dem');
+          else if (hour >= 5 && hour < 7) setSession('rangsang');
+          else if (hour >= 7 && hour < 15) setSession('truagat');
+          else if (hour >= 15 && hour < 18) setSession('chieumuon');
+          else setSession('dem');
+        };
+        checkTime(); 
+        timer = setInterval(checkTime, 60000);
+
+      } catch (err) {
+        console.error("Lỗi nạp AI Models:", err);
+      }
+    };
+    loadModelsAndInit();
+
+    return () => {
+      if (timer) clearInterval(timer);
+      window.removeEventListener('click', playAudio);
+      window.removeEventListener('touchstart', playAudio);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };  
   }, []);
 
   const bgImages: Record<TimeSession, string> = {
     dem: '/honuoc/dem.jpg',
     rangsang: '/honuoc/rangsang.jpg',
     truagat: '/honuoc/truagat.jpg',
-    chieumuon: '/honuoc/hieumuon.jpg'
+    chieumuon: '/honuoc/chieumuon.jpg'
   };
 
-  const fetchFirebaseMessage = async () => {
+  // Hàm quét biểu cảm khuôn mặt AI
+  const analyzeEmotionAndGetMessage = async (videoElement: HTMLVideoElement) => {
     try {
-      const querySnapshot = await getDocs(collection(db, "healing_messages"));
-      const messagesList: string[] = [];
-      querySnapshot.forEach((doc) => {
-        if (doc.data().text) messagesList.push(doc.data().text);
-      });
+      const detection = await faceapi.detectSingleFace(
+        videoElement, 
+        new faceapi.TinyFaceDetectorOptions({
+          inputSize: 256,          
+          scoreThreshold: 0.1
+        })
+      ).withFaceExpressions();
 
-      if (messagesList.length > 0) {
-        const randomMsg = messagesList[Math.floor(Math.random() * messagesList.length)];
-        setMessage(randomMsg);
-      } else {
-        useFallbackMessage();
+      console.log("Kết quả quét khuôn mặt AI thực tế:", detection);
+      
+      let primaryEmotion = "neutral"; 
+
+      if (detection && detection.expressions) {
+        // Ép kiểu tường minh thành Record<string, number> để TypeScript không báo lỗi toán học
+        const emotions = detection.expressions as unknown as Record<string, number>;
+        
+        // Trọng số tối ưu hóa độ nhạy cho các biểu cảm phức tạp
+        const weights: Record<string, number> = {
+          happy: 1.0,
+          neutral: 0.7,   
+          sad: 2.2,       
+          angry: 1.6,     
+          fearful: 2.0,    
+          surprised: 1.4
+        };
+
+        primaryEmotion = Object.keys(emotions).reduce((a, b) => {
+          const scoreA = (emotions[a] || 0) * (weights[a] || 1.0);
+          const scoreB = (emotions[b] || 0) * (weights[b] || 1.0);
+          return scoreA > scoreB ? a : b;
+        });
+
+        // Bộ lọc xử lý số mũ âm e-8 từ thư viện face-api, ép kiểu về số mượt mà
+        const actualScore = emotions[primaryEmotion] || 0;
+        if (actualScore < 0.05) {
+          primaryEmotion = 'neutral';
+        }
       }
+
+      console.log(`Cảm xúc xác định: [${primaryEmotion}]. Đang lấy dữ liệu từ Firestore bằng biến db...`);
+      await fetchFirebaseEmotionMessage(primaryEmotion);
+
     } catch (err) {
-      console.error("Lỗi lấy dữ liệu từ Firebase, đang dùng tin nhắn dự phòng:", err);
-      useFallbackMessage();
+      console.error("Lỗi phân tích cảm xúc:", err);
+      useFallbackEmotionMessage("neutral");
     }
   };
 
-  const useFallbackMessage = () => {
-    const randomMsg = fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
+  const fetchFirebaseEmotionMessage = async (emotion: string) => {
+    try {
+      
+      // Sử dụng trực tiếp thực thể `db` từ import tĩnh của bạn phối hợp với hàm doc()
+      const docRef = doc(db, "emotion_messages", emotion);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists() && docSnap.data().texts) {
+        const textsArray = docSnap.data().texts as string[];
+        if (textsArray.length > 0) {
+          // Lấy ngẫu nhiên một câu chúc từ mảng texts tương ứng của cảm xúc đó
+          const randomMsg = textsArray[Math.floor(Math.random() * textsArray.length)];
+          setMessage(randomMsg);
+          return;
+        }
+      }
+      
+      useFallbackEmotionMessage(emotion);
+    } catch (err) {
+      console.error(`Lỗi kết nối Firestore cho cảm xúc [${emotion}], chuyển sang danh sách dự phòng:`, err);
+      useFallbackEmotionMessage(emotion);
+    }
+  };
+
+  const useFallbackEmotionMessage = (emotion: string) => {
+    const list = fallbackEmotionsMessages[emotion] || fallbackEmotionsMessages["default"];
+    const randomMsg = list[Math.floor(Math.random() * list.length)];
     setMessage(randomMsg);
   };
 
   const startHealing = async () => {
-    setStatus('watching');
+    setStatus('preparing');
     setCapturedImg(null);
-    setCountdown(5);
+    setCountdown(null); // Chưa đếm ngược vội
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      
+      setTimeout(() => {
+        setStatus('watching');
+        setCountdown(5);
+      }, 3500);
+
     } catch (err) {
       console.error("Không thể mở camera:", err);
-      setCountdown(null);
       setTimeout(() => {
-        fetchFirebaseMessage();
+        fetchFirebaseEmotionMessage('neutral');
         setStatus('healing');
       }, 3000);
       return;
@@ -131,48 +228,42 @@ const HoNuocPage = () => {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      captureSnapshot();
-      stopCamera();
-      fetchFirebaseMessage();
-      setStatus('healing');
-      setCountdown(null);
+      const triggerAIAndCapture = async () => {
+        if (videoRef.current) {
+          captureSnapshot();
+          setStatus('healing');
+          setCountdown(null);
+          await analyzeEmotionAndGetMessage(videoRef.current);
+          stopCamera();
+        }
+      };
+      
+      triggerAIAndCapture();
     }
   }, [countdown]);
 
-  // THUẬT TOÁN CHỤP: Chỉ tính toán cắt bớt hai bên trái/phải, giữ nguyên chiều cao gốc
   const captureSnapshot = () => {
     if (videoRef.current) {
       const video = videoRef.current;
       const canvas = document.createElement('canvas');
       
-      // Lấy chính xác kích thước hiển thị thực tế của khung video trên giao diện
       const displayWidth = video.clientWidth;
       const displayHeight = video.clientHeight;
 
-      // Nhân đôi kích thước canvas để ảnh chụp sắc nét hơn
       canvas.width = displayWidth * 2;
       canvas.height = displayHeight * 2;
 
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Hiệu ứng lật gương ngang
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-
         const sourceWidth = video.videoWidth;
         const sourceHeight = video.videoHeight;
-
-        // Giữ nguyên chiều cao gốc của camera (không cắt trên dưới)
         const sHeight = sourceHeight;
-        
-        // Tính toán độ rộng mới dựa theo tỷ lệ khung hiển thị để chỉ cắt 2 bên
         const displayAspect = displayWidth / displayHeight;
         const sWidth = sHeight * displayAspect;
-        
-        // Tọa độ X bắt đầu cắt ở chính giữa để loại bỏ đều hai bên rìa trái và phải
         const sX = (sourceWidth - sWidth) / 2;
         const sY = 0; 
-
         ctx.drawImage(
           video,
           sX, sY, sWidth, sHeight,          
@@ -240,14 +331,9 @@ const HoNuocPage = () => {
                 )}
 
             {/* LÚC CHUẨN BỊ CHỤP (watching) */}
-            {status === 'watching' && (
+            {(status === 'preparing' || status === 'watching') && (
               <div className="relative w-full h-full animate-in fade-in duration-1000 flex items-center justify-center bg-black/20 p-6 md:p-10">
                 
-                {/* BẰNG CÁCH GIỚI HẠN max-w-[50%] HOẶC max-w-md:
-                  Khung video sẽ thu hẹp chiều ngang lại tạo thành một chiếc gương đứng nghệ thuật.
-                  Sử dụng object-cover giúp camera tự động xén bớt 2 bên rìa ngay lúc này, giữ nguyên chiều cao. 
-                  Nhờ vậy, lúc chuẩn bị bấm máy bạn thấy ai trong khung hình đứng này thì ảnh ra sẽ chuẩn xác 100% y hệt.
-                */}
                 <div className="w-full md:w-[50%] h-full relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black/40">
                   <video 
                     ref={videoRef} 
@@ -257,20 +343,43 @@ const HoNuocPage = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-blue-950/20 via-transparent to-transparent mix-blend-color pointer-events-none" />
                   
-                  {countdown !== null && countdown > 0 && (
+                  {/*Hiện thông báo nhắc nhở khi ở trạng thái preparing */}
+                  {status === 'preparing' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-20 p-6 text-center animate-in fade-in zoom-in duration-500">
+                      <div className="text-3xl mb-3 animate-bounce">📸</div>
+                      <span className="text-sm md:text-base font-light text-white/90 tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                        Hãy nhìn thẳng vào mặt hồ để chuẩn bị kết nối tâm hồn...
+                      </span>
+                    </div>
+                  )}
+
+                  {/*Hiện số đếm ngược khi ở trạng thái watching */}
+                  {status === 'watching' && countdown !== null && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 backdrop-blur-[1px] z-20 animate-in fade-in duration-300">
-                      <span className="text-7xl md:text-8xl font-extralight text-white/90 tracking-widest drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-ping absolute">
-                        {countdown}
-                      </span>
-                      <span className="text-7xl md:text-8xl font-extralight text-white/90 tracking-widest drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">
-                        {countdown}
-                      </span>
+                      {countdown > 0 ? (
+                        <>
+                          <span className="text-7xl md:text-8xl font-extralight text-white/90 tracking-widest drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-ping absolute">
+                            {countdown}
+                          </span>
+                          <span className="text-7xl md:text-8xl font-extralight text-white/90 tracking-widest drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+                            {countdown}
+                          </span>
+                        </>
+                      ) : (
+                        // 🌟 Khi đếm về 0, hiện dòng chữ chờ đợi phân tích thay vì để màn hình đứng im
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[4px] animate-in fade-in duration-500">
+                          <div className="w-12 h-12 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mb-4" />
+                          <span className="text-xs md:text-sm font-light text-blue-200 tracking-[0.3em] uppercase animate-pulse">
+                            Mặt hồ đang lắng nghe cảm xúc...
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
                 <p className="absolute bottom-12 w-full text-center text-blue-200/80 text-sm italic tracking-widest animate-pulse z-10 pointer-events-none">
-                  Mặt hồ đang lưu lại bóng hình yên bình của bạn...
+                  {status === 'preparing' ? "Đang kết nối gương thần..." : "Mặt hồ đang lưu lại bóng hình yên bình của bạn..."}
                 </p>
               </div>
             )}
