@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 import { auth, db } from '@/app/lib/firebaseAdmin';
+import { createDefaultUserData } from '@/app/lib/userDefaults';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,21 +29,13 @@ export async function POST(req: NextRequest) {
     // TẠO FIRESTORE DOCUMENT VỚI TOÀN BỘ SCHEMA MẶC ĐỊNH
     // Nguyên tắc: set sẵn ALL fields → chưa có gì = null/0 → update khi cần
     // ========================================
-    await db.collection('users').doc(userRecord.uid).set({
-      uid: userRecord.uid,
-      email: email,
-      provider: 'password',
-      createdAt: new Date().toISOString(),
-      lastLogin: null,           // → login sẽ cập nhật
-      username: null,            // → survey sẽ cập nhật
-      lastSurveyScore: null,     // → survey sẽ cập nhật
-      lastSurveyType: null,      // → survey sẽ cập nhật
-      topicStreak: 0,            // → daily-checkin server sẽ tính
-      lastCheckinDate: null,     // → daily-checkin sẽ cập nhật
-      updatedAt: null,           // → bất kỳ update nào sẽ ghi
-      seeds: 0,
-      money: 0,
-    });
+    await db.collection('users').doc(userRecord.uid).set(
+      createDefaultUserData({
+        uid: userRecord.uid,
+        email,
+        provider: 'password',
+      })
+    );
 
     // Tạo link verify bằng Firebase Admin
     let verificationLink: string;
@@ -55,8 +49,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Không thể tạo link xác minh' }, { status: 500 });
     }
 
-    // Gửi email bằng Gmail SMTP
-    const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -101,14 +93,15 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Đã gửi email xác minh' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ ERROR:', error);
+    const errorCode = error instanceof Error && 'code' in error ? String(error.code) : '';
     const firebaseErrors: Record<string, string> = {
       'auth/email-already-exists': 'Email này đã được sử dụng',
       'auth/invalid-email': 'Email không hợp lệ',
       'auth/phone-number-already-exists': 'Số điện thoại đã được sử dụng',
       'auth/invalid-phone-number': 'Số điện thoại không hợp lệ (VD: 0912345678)',
     };
-    return NextResponse.json({ error: firebaseErrors[error.code] || 'Đăng ký thất bại' }, { status: 400 });
+    return NextResponse.json({ error: firebaseErrors[errorCode] || 'Đăng ký thất bại' }, { status: 400 });
   }
 }

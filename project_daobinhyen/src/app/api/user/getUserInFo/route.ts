@@ -12,6 +12,10 @@ export async function GET(req: NextRequest) {
     if (!userSnap.exists) return NextResponse.json({ error: 'Không tìm thấy user' }, { status: 404 });
 
     const data = userSnap.data();
+
+    // 🌟 ĐÃ XÓA: Toàn bộ phần Lazy Evaluation và Fetch 1 lá thư cũ ở đây 
+    // vì bạn đã chuyển sang collection mail độc lập xử lý ở API riêng.
+
     return NextResponse.json({
       userId: decodedToken.uid,
       username: data?.username ?? null,
@@ -19,8 +23,12 @@ export async function GET(req: NextRequest) {
       lastSurveyType: data?.lastSurveyType ?? null,
       lastLoginDate: data?.lastCheckinDate ?? data?.createdAt ?? new Date().toISOString(),
       topicStreak: data?.topicStreak ?? 0,
+      leaves: data?.leaves ?? 0,
+      money: data?.money ?? 0,
+      seeds: data?.seeds ?? 0,
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Lỗi xác thực' }, { status: 401 });
   }
 }
