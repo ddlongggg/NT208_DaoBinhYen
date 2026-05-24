@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
                 updatedAt: null,
                 seeds: 0,
                 money: 0,
+                leaves:0,
             });
             console.log('USER CREATED OK (full schema)');
         } else {
