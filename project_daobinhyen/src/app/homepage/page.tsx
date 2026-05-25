@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Thêm router để điều hướng từ Modal
+import { useRouter } from 'next/navigation';
+import SettingsButton from '@/app/components/SettingsButton';
 
 export default function DynamicIsland() {
     const router = useRouter();
@@ -92,6 +93,9 @@ export default function DynamicIsland() {
                     animation: floatingBg 6s ease-in-out infinite;
                 }
             `}</style>
+
+            {/* NÚT BÁNH RĂNG CÀI ĐẶT */}
+            <SettingsButton />
 
             <div
                 className="absolute -left-[0%] -top-[5%] w-[100%] h-[115%] animate-floating transition-all duration-1000 ease-in-out"

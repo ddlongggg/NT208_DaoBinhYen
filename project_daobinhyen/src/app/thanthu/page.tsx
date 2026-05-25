@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import SettingsButton from '@/app/components/SettingsButton';
 
 interface Letter {
     id: string;
@@ -323,7 +324,7 @@ export default function TrungTamDao() {
             >
                 <div className="absolute inset-0 bg-black/10 z-0 pointer-events-none"></div>
 
-                {/* Nút Back */}
+                {/* NÚT BACK */}
                 <div className="absolute top-6 left-6 z-[100]">
                     <button
                         onClick={() => window.location.href = '/homepage'}
@@ -334,6 +335,9 @@ export default function TrungTamDao() {
                         </svg>
                     </button>
                 </div>
+
+                {/* NÚT CÀI ĐẶT - đặt nhường chỗ cho thanh tài sản bên phải */}
+                <SettingsButton className="fixed top-5 right-[17rem] z-[9999]" />
 
                 {/* KHU VỰC HIỂN THỊ TÀI SẢN */}
                 <div className="absolute top-6 right-6 z-[100] flex gap-3">

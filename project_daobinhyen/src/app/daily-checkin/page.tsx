@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-
+import SettingsButton from '@/app/components/SettingsButton';
 import styles from './daily-checkin.module.css';
 
 // --- INTERFACES ---
@@ -63,6 +63,13 @@ export default function DailyCheckinPage() {
 
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Lấy global volume (0-1) từ localStorage
+  const getGlobalVol = (): number => {
+    if (typeof window === 'undefined') return 1;
+    if (localStorage.getItem('app_muted') === 'true') return 0;
+    return Number(localStorage.getItem('app_volume') ?? '70') / 100;
+  };
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
@@ -191,7 +198,7 @@ export default function DailyCheckinPage() {
         if (currentScene.text[index - 1] !== ' ') {
           sound.pause();
           sound.currentTime = 0;
-          sound.volume = 0.2;
+          sound.volume = 0.2 * getGlobalVol();
           sound.play().catch(() => {});
           setTimeout(() => { sound.pause(); }, 60);
         }
@@ -210,6 +217,7 @@ export default function DailyCheckinPage() {
   const playClickSound = () => {
     if (clickSoundRef.current) {
       clickSoundRef.current.currentTime = 0;
+      clickSoundRef.current.volume = 1 * getGlobalVol();
       clickSoundRef.current.play().catch(() => {});
     }
   };
@@ -371,6 +379,9 @@ export default function DailyCheckinPage() {
     <div className="relative w-full h-screen bg-[#1a1a1a] font-sans overflow-hidden">
       <audio ref={typingSoundRef} src="/typing.wav" preload="auto" />
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
+
+      {/* NÚT CÀI ĐẶT */}
+      <SettingsButton />
 
       {/* BACKGROUND */}
       <div
