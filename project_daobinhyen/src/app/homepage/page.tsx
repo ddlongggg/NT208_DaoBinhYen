@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Thêm router để điều hướng từ Modal
+import { useRouter } from 'next/navigation';
+import SettingsButton from '@/app/components/SettingsButton';
 
 export default function DynamicIsland() {
     const router = useRouter();
@@ -10,6 +11,14 @@ export default function DynamicIsland() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [userEmotion, setUserEmotion] = useState('Hạnh phúc');
     const [hoveredZone, setHoveredZone] = useState<string | null>(null);
+    const [username, setUsername] = useState('Lữ Khách');
+
+    useEffect(() => {
+        fetch('/api/user/getUserInFo')
+            .then(res => res.json())
+            .then(data => { if (data.username) setUsername(data.username); })
+            .catch(() => {});
+    }, []);
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
     const [selectedZone, setSelectedZone] = useState<{ title: string, path: string, desc: string, img: string } | null>(null);
@@ -85,6 +94,9 @@ export default function DynamicIsland() {
                 }
             `}</style>
 
+            {/* NÚT BÁNH RĂNG CÀI ĐẶT */}
+            <SettingsButton />
+
             <div
                 className="absolute -left-[0%] -top-[5%] w-[100%] h-[115%] animate-floating transition-all duration-1000 ease-in-out"
                 style={{
@@ -104,7 +116,7 @@ export default function DynamicIsland() {
                             <img src="logo.png" alt="User" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">Luân Ngu</span>
+                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">{username}</span>
                             <div className="flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></span>
                                 <span className="text-gray-200 text-[11px] font-medium uppercase tracking-wider">{userEmotion}</span>
