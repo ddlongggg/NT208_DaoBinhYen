@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from '@/app/context/AuthContext';
+import ProfileBar from '@/app/components/ProfileBar';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,9 +26,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body>
+      <body
+        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {/* Bọc toàn bộ ứng dụng bên trong AuthProvider */}
         <AuthProvider>
+          <ProfileBar />
           {children}
         </AuthProvider>
       </body>

@@ -21,6 +21,12 @@ export async function GET(req: NextRequest) {
       topicStreak: data?.topicStreak ?? 0,
       money: data?.money ?? 0,
       seeds: data?.seeds ?? 0,
+
+      // 🔥 BỔ SUNG LẤY 4 LOẠI TINH HOA TỪ FIREBASE TRẢ VỀ FRONT-END 🔥
+      essence_lam: data?.essence_lam ?? 0,
+      essence_tim: data?.essence_tim ?? 0,
+      essence_vang: data?.essence_vang ?? 0,
+      essence_cam: data?.essence_cam ?? 0,
     });
   } catch {
     return NextResponse.json({ error: 'Lỗi xác thực' }, { status: 401 });
