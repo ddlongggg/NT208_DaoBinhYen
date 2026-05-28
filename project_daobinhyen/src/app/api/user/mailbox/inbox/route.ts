@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     if (!pendingLettersSnap.empty) {
       const batch = db.batch();
       pendingLettersSnap.docs.forEach(doc => {
-        batch.update(doc.ref, { status: 'delivered' });
+        // Đồng bộ: delivered thì is_read = false
+        batch.update(doc.ref, { status: 'delivered', is_read: false });
       });
       await batch.commit();
     }
@@ -40,11 +41,15 @@ export async function GET(req: NextRequest) {
 
     const letters = snapshot.docs.map(doc => {
       const data = doc.data();
+      // is_read đồng bộ theo status: chỉ true khi status === 'read'
+      const isRead = data.status === 'read' ? true : (data.is_read === true ? true : false);
       return {
         id: doc.id,
-        ...data,
+        content: data.content ?? '',
         sent_at: data.sent_at.toDate().toISOString(),
-        deliver_at: data.deliver_at.toDate().toISOString()
+        deliver_at: data.deliver_at.toDate().toISOString(),
+        is_read: isRead,
+        status: data.status ?? 'delivered'
       };
     });
 
