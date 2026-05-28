@@ -12,30 +12,48 @@ export async function POST(req: NextRequest) {
         const decodedToken = await auth.verifyIdToken(idToken);
         console.log('DECODED TOKEN:', decodedToken.uid, decodedToken.email);
 
-        try {
-            const userRef = db.collection('users').doc(decodedToken.uid);
-            const userSnap = await userRef.get();
-            console.log('USER EXISTS:', userSnap.exists);
+        // Chỉ check verify với email/password, bỏ qua Google/Facebook
+        const isEmailProvider = decodedToken.firebase.sign_in_provider === 'password';
+        if (isEmailProvider && !decodedToken.email_verified) {
+            return NextResponse.json({
+                error: 'Vui lòng xác minh email trước khi đăng nhập'
+            }, { status: 403 });
+        }
 
-            if (!userSnap.exists) {
-                await userRef.set({
-                    uid: decodedToken.uid,
-                    email: decodedToken.email || null,
-                    name: decodedToken.name || null,
-                    avatar: decodedToken.picture || null,
-                    provider: decodedToken.firebase.sign_in_provider,
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString(),
-                });
-                console.log('USER CREATED OK');
-            } else {
-                await userRef.update({
-                    lastLogin: new Date().toISOString(),
-                });
-                console.log('USER UPDATED OK');
-            }
-        } catch (dbError) {
-            console.error('FIRESTORE ERROR:', dbError);
+        // ========================================
+        // QUẢN LÝ FIRESTORE DOCUMENT
+        // Nếu chưa có → tạo đầy đủ ALL fields (Google/FB lần đầu)
+        // Nếu có rồi → chỉ update lastLogin
+        // ========================================
+        const userRef = db.collection('users').doc(decodedToken.uid);
+        const userSnap = await userRef.get();
+
+        if (!userSnap.exists) {
+            // User đăng nhập lần đầu qua Google/Facebook (chưa qua register)
+            // → Tạo document với TOÀN BỘ schema mặc định
+            await userRef.set({
+                uid: decodedToken.uid,
+                email: decodedToken.email || null,
+                provider: decodedToken.firebase.sign_in_provider,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                username: null,
+                lastSurveyScore: null,
+                lastSurveyType: null,
+                topicStreak: 0,
+                lastCheckinDate: null,
+                updatedAt: null,
+                seeds: 0,
+                money: 0,
+                leaves:0,
+            });
+            console.log('USER CREATED OK (full schema)');
+        } else {
+            // User đã tồn tại → chỉ cập nhật lastLogin
+            await userRef.update({
+                lastLogin: new Date().toISOString(),
+            });
+            console.log('USER UPDATED OK');
         }
 
         const expiresIn = 60 * 60 * 24 * 7 * 1000;
