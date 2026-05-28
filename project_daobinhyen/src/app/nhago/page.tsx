@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from '@/app/lib/firebase'; 
+import SettingsButton from '@/app/components/SettingsButton';
 
 type TimeSession = 'night' | 'sunrise' | 'midday' | 'afternoon';
 
@@ -32,6 +33,25 @@ const WoodHousePage: React.FC = () => {
 
   //Nút âm lượng
   const [volume, setVolume] = useState(0.5); // Mặc định 50%
+
+  // Lấy volume toàn cục từ localStorage (0-1)
+  const getGlobalVol = (): number => {
+    if (typeof window === 'undefined') return 1;
+    if (localStorage.getItem('app_muted') === 'true') return 0;
+    return Number(localStorage.getItem('app_volume') ?? '70') / 100;
+  };
+
+  // Lắng nghe thay đổi volume từ SettingsButton
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { volume: globalVol, muted: globalMuted } = (e as CustomEvent).detail;
+      if (audioRef.current) {
+        audioRef.current.volume = globalMuted ? 0 : volume * globalVol;
+      }
+    };
+    window.addEventListener('app-volume-change', handler);
+    return () => window.removeEventListener('app-volume-change', handler);
+  }, [volume]);
 
   // Hàm gọi tìm nhạc (Trong database)
   const handleSearch = () => {
@@ -121,7 +141,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       setCurrentTrackUrl(audio.src);
     }
 
-    audio.volume = volume;
+    audio.volume = volume * getGlobalVol();
     setMusicType(type);
     await audio.play();
     setIsPlaying(true);
@@ -174,6 +194,8 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       className="relative w-screen h-screen bg-cover bg-center transition-all duration-[2000ms] ease-in-out flex items-center justify-center overflow-hidden"
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
+      {/* NÚT CÀI ĐẶT */}
+      <SettingsButton />
       {activePanel && (
         <div className="absolute top-9 right-30 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
@@ -382,7 +404,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
             onChange={(e) => {
               const v = parseFloat(e.target.value);
               setVolume(v);
-              if(audioRef.current) audioRef.current.volume = v;
+              if(audioRef.current) audioRef.current.volume = v * getGlobalVol();
             }} 
             className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" 
           />

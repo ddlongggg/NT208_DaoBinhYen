@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import SettingsButton from '@/app/components/SettingsButton';
 
 interface Scene {
   id: string; speaker: string; text: string; type?: string; next?: string;
@@ -63,6 +64,13 @@ export default function SurveyPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Lấy global volume (0-1) từ localStorage
+  const getGlobalVol = (): number => {
+    if (typeof window === 'undefined') return 1;
+    if (localStorage.getItem('app_muted') === 'true') return 0;
+    return Number(localStorage.getItem('app_volume') ?? '70') / 100;
+  };
 
   const currentScene = baseScenario.find(s => s.id === currentSceneId) || baseScenario[0];
 
@@ -150,7 +158,7 @@ export default function SurveyPage() {
         if (rawText[index - 1] !== ' ') {
           sound.pause();
           sound.currentTime = 0;
-          sound.volume = 0.2;
+          sound.volume = 0.2 * getGlobalVol();
           sound.play().catch(() => { });
           setTimeout(() => { sound.pause(); }, 60);
         }
@@ -179,6 +187,7 @@ export default function SurveyPage() {
   const playClickSound = () => {
     if (clickSoundRef.current) {
       clickSoundRef.current.currentTime = 0;
+      clickSoundRef.current.volume = 1 * getGlobalVol();
       clickSoundRef.current.play().catch(() => { });
     }
   };
@@ -325,6 +334,9 @@ export default function SurveyPage() {
     <div className="relative w-full h-screen bg-[#1a1a1a] font-sans overflow-hidden">
       <audio ref={typingSoundRef} src="/typing.wav" preload="auto" />
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
+
+      {/* NÚT CÀI ĐẶT */}
+      <SettingsButton />
 
       <div className="absolute inset-0 bg-cover bg-center animate-ken-burns" style={{ backgroundImage: "url('/Island8.0.jpg')" }}></div>
       <div className="absolute inset-0 bg-black/30"></div>
