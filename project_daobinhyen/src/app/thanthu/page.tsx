@@ -336,11 +336,11 @@ export default function TrungTamDao() {
                     </button>
                 </div>
 
-                {/* NÚT CÀI ĐẶT - đặt nhường chỗ cho thanh tài sản bên phải */}
-                <SettingsButton className="fixed top-5 right-[17rem] z-[9999]" />
+                {/* NÚT CÀI ĐẶT - luôn ở góc phải trên cùng */}
+                <SettingsButton />
 
-                {/* KHU VỰC HIỂN THỊ TÀI SẢN */}
-                <div className="absolute top-6 right-6 z-[100] flex gap-3">
+                {/* KHU VỰC HIỂN THỊ TÀI SẢN - dịch sang trái để nhường chỗ cho bánh răng */}
+                <div className="absolute top-6 right-20 z-[100] flex gap-3">
                     <div className="bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
                         <span className="text-xl">🍂</span>
                         <span className="text-white font-bold text-sm tracking-wide">{leaves} <span className="text-gray-300 font-normal text-xs">Lá vàng</span></span>
