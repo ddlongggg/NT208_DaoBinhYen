@@ -5,7 +5,7 @@ const markLetterAsRead = async (req: NextRequest) => {
   try {
     const sessionCookie = req.cookies.get('session')?.value;
     if (!sessionCookie) {
-      return NextResponse.json({ error: 'Chua dang nhap' }, { status: 401 });
+      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
@@ -15,9 +15,10 @@ const markLetterAsRead = async (req: NextRequest) => {
     const targetId = letterId || mailId;
 
     if (!targetId || typeof targetId !== 'string') {
-      return NextResponse.json({ error: 'mailId khong hop le' }, { status: 400 });
+      return NextResponse.json({ error: 'mailId không hợp lệ' }, { status: 400 });
     }
 
+    // Chỉ truy cập thư trong collection của đúng user (uid) — không thể đọc thư người khác
     const letterRef = db
       .collection('mailbox')
       .doc(uid)
@@ -26,9 +27,22 @@ const markLetterAsRead = async (req: NextRequest) => {
 
     const letterSnap = await letterRef.get();
     if (!letterSnap.exists) {
-      return NextResponse.json({ error: 'Khong tim thay thu' }, { status: 404 });
+      return NextResponse.json({ error: 'Không tìm thấy thư' }, { status: 404 });
     }
 
+    const letterData = letterSnap.data();
+
+    // Chỉ cho phép đọc thư đã được giao (delivered), không cho phép đọc thư pending
+    if (letterData?.status === 'pending') {
+      return NextResponse.json({ error: 'Thư chưa được giao, chưa thể đọc' }, { status: 403 });
+    }
+
+    // Nếu đã đọc rồi thì không cần update lại
+    if (letterData?.is_read === true && letterData?.status === 'read') {
+      return NextResponse.json({ success: true, alreadyRead: true });
+    }
+
+    // Đồng bộ cả hai field: is_read và status
     await letterRef.update({
       is_read: true,
       status: 'read'
@@ -37,7 +51,7 @@ const markLetterAsRead = async (req: NextRequest) => {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Loi may chu' }, { status: 500 });
+    return NextResponse.json({ error: 'Lỗi máy chủ' }, { status: 500 });
   }
 };
 
