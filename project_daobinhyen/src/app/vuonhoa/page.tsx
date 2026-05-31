@@ -1,7 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import './KhuVuonChuaLanh.css';
 import { useAuthContext } from '@/app/context/AuthContext';
+import './KhuVuonChuaLanh.css';
+import { Quicksand } from 'next/font/google';
+const quicksand = Quicksand({
+    subsets: ['vietnamese'],
+    weight: ['400', '500', '600', '700'], // Các độ đậm nhạt
+    display: 'swap',
+});
 
 interface TreeOption {
     id: string;
@@ -116,7 +122,12 @@ export default function Page() {
     const [moneyCount, setMoneyCount] = useState<number>(0);
     const [wateringPlotId, setWateringPlotId] = useState<number | null>(null);
     const [harvestingPlotId, setHarvestingPlotId] = useState<number | null>(null);
+    const [clearingPlotId, setClearingPlotId] = useState<number | null>(null);
     const [essences, setEssences] = useState({ lam: 0, tim: 0, vang: 0, cam: 0 });
+    const [showEssenceMenu, setShowEssenceMenu] = useState(false);
+
+    //State để bật/tắt Bảng Hướng Dẫn
+    const [showGuide, setShowGuide] = useState(true);
 
     // Tách biệt rõ ràng: 'firebaseUser' (đăng nhập) và 'gameUserData' (dữ liệu hạt giống)
     const { user: firebaseUser, userDataExtended: gameUserData, setUserDataExtended, plots, setPlots, refreshGameData } = useAuthContext();
@@ -222,7 +233,25 @@ export default function Page() {
     // --- CÁC LOGIC GAME ---
     const handlePlotClick = (plotId: number, currentStatus: string) => {
         if (currentStatus === 'empty') {
-            updatePlot(plotId, { status: 'menu' });
+            // Thay vì dùng updatePlot chỉ cập nhật 1 ô, ta dùng setPlots để quét và cập nhật toàn bộ vườn
+            setPlots((prevPlots) => {
+                const newPlots = prevPlots.map((plot): PlotData => {
+                    // Mở sổ cho ô được click
+                    if (plot.id === plotId) {
+                        return { ...plot, status: 'menu' };
+                    }
+                    // Nếu phát hiện có ô khác đang mở sổ -> Ép nó gập sổ lại thành đất trống
+                    if (plot.status === 'menu') {
+                        return { ...plot, status: 'empty' };
+                    }
+                    // Các ô đang trồng cây, đang khát... thì giữ nguyên không đụng tới
+                    return plot;
+                });
+
+                // Lưu trạng thái mới lên Backend
+                syncGardenToBackend(newPlots);
+                return newPlots;
+            });
         } else if (currentStatus === 'mature') {
             handleHarvest(plotId);
         }
@@ -265,6 +294,23 @@ export default function Page() {
         });
     };
 
+    // 🔥 HÀM MỚI: XỬ LÝ DỌN DẸP CÂY CHẾT (Có kìm thời gian chờ animation)
+    const handleClearDeadTree = (plotId: number) => {
+        if (clearingPlotId !== null) return;
+        setClearingPlotId(plotId); // Kích hoạt animation bổ cuốc
+
+        // Chờ 800ms (cho cuốc bổ xong 2 nhát) rồi mới reset ô đất
+        setTimeout(() => {
+            updatePlot(plotId, {
+                status: 'empty',
+                selectedTree: null,
+                deathTime: null,
+                isThirsty: false,
+                waterCount: 0
+            });
+            setClearingPlotId(null); // Tắt animation
+        }, 800);
+    };
     const WATER_COST = 5; // Giá tiền tưới 1 lần
 
     const handleWaterPlot = (e: React.MouseEvent, plotId: number) => {
@@ -395,59 +441,92 @@ export default function Page() {
         });
     };
 
-    // Vòng lặp đếm giây hiển thị chính xác (Dọn dẹp Cleanup chuẩn Next.js)
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setPlots((prevPlots) =>
-                prevPlots.map((plot) => {
-                    if (plot.status === 'growing') {
-                        // 1. NẾU CÂY ĐANG KHÁT -> Kiểm tra xem đã đến giờ chết chưa?
-                        if (plot.isThirsty) {
-                            if (plot.deathTime && Date.now() >= plot.deathTime) {
-                                // 🔥 CÂY ĐÃ CHẾT 
-                                return { ...plot, status: 'dead', isThirsty: false, endTime: null, deathTime: null, timeLeft: 0 };
-                            }
-                            return plot; // Vẫn khát nhưng chưa tới giờ chết
-                        }
+    // 1. TÁCH LOGIC TÍNH TOÁN RA THÀNH 1 HÀM ĐỘC LẬP (ĐỂ TÁI SỬ DỤNG)
+    const processPlotTime = (plot: PlotData): PlotData => {
+        if (plot.status === 'growing') {
+            // NẾU CÂY ĐANG KHÁT -> Kiểm tra xem đã đến giờ chết chưa?
+            if (plot.isThirsty) {
+                if (plot.deathTime && Date.now() >= plot.deathTime) {
+                    return { ...plot, status: 'dead', isThirsty: false, endTime: null, deathTime: null, timeLeft: 0 };
+                }
+                return plot;
+            }
 
-                        if (plot.endTime) {
-                            const now = Date.now();
-                            const remaining = Math.max(0, Math.floor((plot.endTime - now) / 1000));
+            if (plot.endTime) {
+                const now = Date.now();
+                const remaining = Math.floor((plot.endTime - now) / 1000);
+                const total = plot.totalGrowTime || (plot.selectedTree ? plot.selectedTree.growTimeSeconds : 0);
 
-                            const total = plot.totalGrowTime || (plot.selectedTree ? plot.selectedTree.growTimeSeconds : remaining);
+                const threshold1 = Math.floor(total * (2 / 3));
+                const threshold2 = Math.floor(total * (1 / 3));
+                const currentWaterCount = plot.waterCount || 0;
 
-                            const threshold1 = Math.floor(total * (2 / 3));
-                            const threshold2 = Math.floor(total * (1 / 3));
+                let targetThreshold = 0;
+                if (currentWaterCount === 1) targetThreshold = threshold1;
+                else if (currentWaterCount === 2) targetThreshold = threshold2;
 
-                            let needsWater = false;
-                            const currentWaterCount = plot.waterCount || 0;
+                if (remaining <= targetThreshold) {
+                    if (targetThreshold === 0) {
+                        return { ...plot, timeLeft: 0, status: 'mature', isThirsty: false, endTime: null, deathTime: null };
+                    } else {
+                        const exactThirstyTime = plot.endTime - (targetThreshold * 1000);
+                        const timeToDie = total * 3 * 1000;
+                        const exactDeathTime = exactThirstyTime + timeToDie;
 
-                            if (currentWaterCount === 1 && remaining <= threshold1) {
-                                needsWater = true;
-                            } else if (currentWaterCount === 2 && remaining <= threshold2) {
-                                needsWater = true;
-                            }
-
-                            if (remaining === 0) {
-                                return { ...plot, timeLeft: 0, status: 'mature', isThirsty: false, endTime: null, deathTime: null };
-                            }
-
-                            // 2. NẾU CÂY BẮT ĐẦU KHÁT -> Kích hoạt đếm ngược cái chết mới
-                            if (needsWater) {
-                                const timeToDie = total * 3 * 1000; // x3 thời gian sống
-                                return { ...plot, timeLeft: remaining, isThirsty: true, endTime: null, deathTime: Date.now() + timeToDie };
-                            }
-
-                            return { ...plot, timeLeft: remaining };
+                        if (now >= exactDeathTime) {
+                            return { ...plot, status: 'dead', isThirsty: false, endTime: null, deathTime: null, timeLeft: 0 };
+                        } else {
+                            return {
+                                ...plot,
+                                timeLeft: targetThreshold,
+                                isThirsty: true,
+                                endTime: null,
+                                deathTime: exactDeathTime
+                            };
                         }
                     }
-                    return plot;
-                })
-            );
-        }, 1000);
+                }
+                return { ...plot, timeLeft: remaining };
+            }
+        }
+        return plot;
+    };
+
+    // 2. XỬ LÝ ĐỒNG BỘ THỜI GIAN NGAY LẬP TỨC & BẬT VÒNG LẶP ĐẾM NGƯỢC
+    useEffect(() => {
+        // Hàm tick xử lý logic thời gian
+        const tick = () => {
+            setPlots(prevPlots => {
+                let needsBackendSync = false;
+
+                const newPlots = prevPlots.map(plot => {
+                    const processed = processPlotTime(plot);
+                    // Bắt mạch: Nếu cây chuyển từ Khỏe mạnh -> Khát hoặc Chết trong lúc offline
+                    if (plot.status !== processed.status || plot.isThirsty !== processed.isThirsty) {
+                        needsBackendSync = true;
+                    }
+                    return processed;
+                });
+
+                // Nếu có cây bị thay đổi trạng thái offline, ta LƯU THẲNG LÊN FIREBASE để sửa lỗi gốc
+                if (needsBackendSync) {
+                    syncGardenToBackend(newPlots);
+                }
+
+                return newPlots;
+            });
+        };
+
+        // 3. CHẠY NGAY 1 LẦN KHI DỮ LIỆU FIREBASE VỪA TẢI XONG (Xóa bỏ độ trễ 1 giây gây nháy hình)
+        tick();
+
+        // 4. BẬT BỘ ĐẾM 1 GIÂY NHƯ BÌNH THƯỜNG
+        const timer = setInterval(tick, 1000);
 
         return () => clearInterval(timer);
-    }, []);
+
+        // 🔥 Theo dõi gameUserData: Mỗi khi Firebase tải xong dữ liệu, Effect này sẽ tự động reset và chạy mượt mà
+    }, [gameUserData, setPlots]);
 
     const formatTime = (seconds: number) => {
         if (seconds <= 0) return "00:00:00";
@@ -463,33 +542,65 @@ export default function Page() {
     }
 
     return (
-        <div className="garden-overlay">
+        <div className={`garden-overlay ${quicksand.className}`}>
             <div className="garden-board">
                 <button className="close-btn" onClick={() => window.history.back()}>✖</button>
 
-                {/* BẢNG HƯỚNG DẪN TINH HOA GÓC PHẢI */}
-                <div className="glass-panel panel-reward-top">
-                    <div className="panel-header text-center">BỘ SƯU TẬP TINH HOA</div>
-                    <p className="sub-text">Thu thập khi chặt cây để đổi thú cưng</p>
-                    <div className="reward-container" style={{ flexWrap: 'wrap' }}>
-                        <div className="reward-box" style={{ width: '45%', marginBottom: '10px', borderColor: '#60a5fa', background: 'rgba(96, 165, 250, 0.1)' }}>
-                            <img src="/vuonhoa/tinhhoa/tinhhoalam.png" alt="Pha lê lam" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
-                            <p style={{ color: '#60a5fa' }}>TINH HOA LAM</p>
-                        </div>
-                        <div className="reward-box" style={{ width: '45%', marginBottom: '10px', borderColor: '#c084fc', background: 'rgba(192, 132, 252, 0.1)' }}>
-                            <img src="/vuonhoa/tinhhoa/tinhhoatim.png" alt="Pha lê tím" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
-                            <p style={{ color: '#c084fc' }}>TINH HOA TÍM</p>
-                        </div>
-                        <div className="reward-box" style={{ width: '45%', borderColor: '#facc15', background: 'rgba(250, 204, 21, 0.1)' }}>
-                            <img src="/vuonhoa/tinhhoa/tinhhoavang.png" alt="Pha lê vàng" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
-                            <p style={{ color: '#facc15' }}>TINH HOA VÀNG</p>
-                        </div>
-                        <div className="reward-box" style={{ width: '45%', borderColor: '#fb923c', background: 'rgba(251, 146, 60, 0.1)' }}>
-                            <img src="/vuonhoa/tinhhoa/tinhhoacam.png" alt="Pha lê cam" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
-                            <p style={{ color: '#fb923c' }}>TINH HOA CAM</p>
+                {/* NÚT BẤM MỞ TÚI TINH HOA (Nằm cạnh nút X) */}
+                <button
+                    onClick={() => setShowEssenceMenu(!showEssenceMenu)}
+                    className="absolute top-[20px] right-[80px] z-[999] bg-gradient-to-r from-blue-600/80 to-purple-600/80 backdrop-blur-md border border-white/40 px-4 py-2 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                    <span className="text-[18px]">💎</span>
+                    <span className="text-white font-bold text-sm tracking-wide">Kho Tinh Hoa</span>
+                </button>
+
+                {/* BẢNG HƯỚNG DẪN TINH HOA (Đã được bọc điều kiện ẩn/hiện) */}
+                {showEssenceMenu && (
+                    <div className="glass-panel panel-reward-top animate-in fade-in zoom-in-95 duration-300 z-[1000]">
+                        {/* Nút X để đóng bảng */}
+                        <button
+                            onClick={() => setShowEssenceMenu(false)}
+                            className="absolute top-3 right-4 text-gray-300 hover:text-white font-bold text-lg transition-colors"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="panel-header text-center pr-4">BỘ SƯU TẬP TINH HOA</div>
+                        <p className="sub-text">Thu thập khi chặt cây để đổi thú cưng</p>
+                        <div className="reward-container" style={{ flexWrap: 'wrap' }}>
+                            <div className="reward-box" style={{ width: '45%', marginBottom: '10px', borderColor: '#60a5fa', background: 'rgba(96, 165, 250, 0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <img src="/vuonhoa/tinhhoa/tinhhoalam.png" alt="Pha lê lam" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
+                                </div>
+                                <p style={{ color: '#60a5fa' }}>TINH HOA LAM</p>
+                                {/* Hiển thị số lượng đang có */}
+                                <div className="text-white text-xs font-bold bg-blue-500/20 rounded-full mt-1 py-0.5">Sở hữu: {essences.lam}</div>
+                            </div>
+                            <div className="reward-box" style={{ width: '45%', marginBottom: '10px', borderColor: '#c084fc', background: 'rgba(192, 132, 252, 0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <img src="/vuonhoa/tinhhoa/tinhhoatim.png" alt="Pha lê tím" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
+                                </div>
+                                <p style={{ color: '#c084fc' }}>TINH HOA TÍM</p>
+                                <div className="text-white text-xs font-bold bg-purple-500/20 rounded-full mt-1 py-0.5">Sở hữu: {essences.tim}</div>
+                            </div>
+                            <div className="reward-box" style={{ width: '45%', borderColor: '#facc15', background: 'rgba(250, 204, 21, 0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <img src="/vuonhoa/tinhhoa/tinhhoavang.png" alt="Pha lê vàng" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
+                                </div>
+                                <p style={{ color: '#facc15' }}>TINH HOA VÀNG</p>
+                                <div className="text-white text-xs font-bold bg-yellow-500/20 rounded-full mt-1 py-0.5">Sở hữu: {essences.vang}</div>
+                            </div>
+                            <div className="reward-box" style={{ width: '45%', borderColor: '#fb923c', background: 'rgba(251, 146, 60, 0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <img src="/vuonhoa/tinhhoa/tinhhoacam.png" alt="Pha lê cam" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', marginBottom: '8px' }} />
+                                </div>
+                                <p style={{ color: '#fb923c' }}>TINH HOA CAM</p>
+                                <div className="text-white text-xs font-bold bg-orange-500/20 rounded-full mt-1 py-0.5">Sở hữu: {essences.cam}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* RENDER CÁC Ô ĐẤT */}
                 {/* 1. Thêm 'index' vào trong .map() */}
@@ -501,9 +612,9 @@ export default function Page() {
                             {plot.status === 'empty' && (
                                 <>
                                     <div className="soil-base empty-glow"></div>
-                                    <div className="hover-pointer pulse-pointer"><div className="click-effect">🖱️</div></div>
+                                    <div className="hover-pointer pulse-pointer"></div>
                                     {/* 👉 Gắn thêm class 'text-empty' */}
-                                    <div className="tutorial-text text-empty pulse">CLICK VÀO Ô ĐẤT<br />ĐỂ TRỒNG</div>
+                                    <div className="tutorial-text text-empty pulse">CLICK ĐỂ TRỒNG</div>
                                 </>
                             )}
 
@@ -607,20 +718,15 @@ export default function Page() {
                                         CÂY ĐÃ HÉO ÚA 🥀
                                     </div>
 
-                                    {/* Dùng cái rìu để người chơi click vào chặt bỏ xác cây */}
+                                    {/* Dùng chiếc cuốc để người chơi click vào dọn dẹp xác cây */}
                                     <img
-                                        src="/vuonhoa/CaiRiu.png"
+                                        src="/vuonhoa/CaiCuoc.png"
                                         alt="Dọn dẹp"
-                                        className="axe-btn float-anim"
+                                        // Đổi class để dùng CSS của cuốc, và kiểm tra xem có đang chặt không
+                                        className={`pickaxe-btn ${clearingPlotId === plot.id ? 'is-digging' : 'float-anim'}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            updatePlot(plot.id, {
-                                                status: 'empty',
-                                                selectedTree: null,
-                                                deathTime: null,
-                                                isThirsty: false,
-                                                waterCount: 0
-                                            });
+                                            handleClearDeadTree(plot.id); // Gọi hàm mới thay vì updatePlot trực tiếp
                                         }}
                                     />
                                 </>
@@ -628,7 +734,7 @@ export default function Page() {
                         </div>
                         {/* MENU CHỌN CÂY CHO Ô ĐẤT */}
                         {plot.status === 'menu' && (
-                            <div className="glass-panel panel-menu pop-in" style={{ width: '400px' }}>
+                            <div className="glass-panel panel-menu pop-in" style={{ width: '450px' }}>
                                 <div className="panel-header">
                                     <span className="step-number"></span> CHỌN MẦM CÂY GỬI GẮM
                                 </div>
@@ -642,8 +748,23 @@ export default function Page() {
                                                     <img src={tree.iconPath} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                                 </div>
                                                 <div className="item-info" style={{ flex: 1, marginLeft: '10px' }}>
-                                                    <h4 style={{ fontSize: '14px', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{tree.name}</h4>
-                                                    <p style={{ color: '#bae6fd' }}>Giá: {tree.seedCost} 🌱 | Lớn trong: {tree.growTimeSeconds >= 3600 ? `${tree.growTimeSeconds / 3600} giờ` : `${tree.growTimeSeconds / 60} phút`}</p>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                        <h4 style={{ fontSize: '14px', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0 }}>{tree.name}</h4>
+
+                                                        {/* 🔥 THÊM BADGE HIỂN THỊ ĐỘ HIẾM TỰ ĐỘNG ĐỔI MÀU 🔥 */}
+                                                        {/* 🔥 ĐÃ SỬA: Thêm whitespace-nowrap và shrink-0 vào class 🔥 */}
+                                                        <span className={`whitespace-nowrap shrink-0 text-[10px] px-2 py-0.5 rounded-full border font-bold tracking-wide ${tree.rarity === 'Huyền Thoại' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400/50 shadow-[0_0_8px_rgba(234,179,8,0.5)]' :
+                                                            tree.rarity === 'Sử Thi' ? 'bg-purple-500/20 text-purple-300 border-purple-400/50 shadow-[0_0_8px_rgba(168,85,247,0.4)]' :
+                                                                tree.rarity === 'Hiếm' ? 'bg-blue-500/20 text-blue-300 border-blue-400/50' :
+                                                                    'bg-gray-500/20 text-gray-300 border-gray-400/50'
+                                                            }`}>
+                                                            {tree.rarity}
+                                                        </span>
+                                                    </div>
+
+                                                    <p style={{ color: '#bae6fd', margin: 0 }}>
+                                                        Giá: {tree.seedCost} 🌱 | Lớn trong: {tree.growTimeSeconds >= 3600 ? `${tree.growTimeSeconds / 3600} giờ` : `${tree.growTimeSeconds / 60} phút`}
+                                                    </p>
                                                 </div>
                                                 <button className="btn-primary" onClick={(e) => { e.stopPropagation(); handlePlantTree(tree, plot.id); }}>
                                                     GIEO HẠT 🖱️
@@ -720,6 +841,43 @@ export default function Page() {
                                 >
                                     XÁC NHẬN
                                 </button>
+                            </div>
+                        )}
+                        {/* 🔥 BẢNG HƯỚNG DẪN LÀM VƯỜN (Hiển thị khi mới vào) 🔥 */}
+                        {showGuide && (
+                            <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+                                <div className="relative bg-[#0f172a] border border-emerald-500/30 w-[90vw] max-w-[650px] rounded-[2rem] shadow-[0_0_50px_rgba(16,185,129,0.2)] p-8 flex flex-col items-center text-left">
+
+                                    <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-6 tracking-widest drop-shadow-md text-center">
+                                        CẨM NANG LÀM VƯỜN
+                                    </h2>
+
+                                    <div className="flex flex-col gap-4 text-gray-200 text-sm w-full">
+                                        <div className="flex gap-4 items-start bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="text-3xl drop-shadow-md">🌱</div>
+                                            <p className="leading-relaxed"><strong>Gieo Hạt:</strong> Sử dụng Hạt Giống để mua mầm cây từ cuốn sổ. Mỗi loại cây có thời gian sinh trưởng và độ hiếm khác nhau.</p>
+                                        </div>
+                                        <div className="flex gap-4 items-start bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="text-3xl drop-shadow-md">💦</div>
+                                            <p className="leading-relaxed"><strong>Tưới Nước:</strong> Trong quá trình lớn lên, cây sẽ bị khát. Bạn cần tiêu hao Vàng để tưới. Cây cần được chăm sóc đều đặn mới có thể phát triển.</p>
+                                        </div>
+                                        <div className="flex gap-4 items-start bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="text-3xl drop-shadow-md">🥀</div>
+                                            <p className="leading-relaxed"><strong>Héo Úa:</strong> Đừng bỏ mặc khu vườn nhé! Nếu cây khát nước quá lâu mà không được tưới, cây sẽ chết khô và bạn buộc phải dùng cuốc để dọn dẹp.</p>
+                                        </div>
+                                        <div className="flex gap-4 items-start bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="text-3xl drop-shadow-md">💎</div>
+                                            <p className="leading-relaxed"><strong>Thu Hoạch:</strong> Khi cây trưởng thành, bấm thu hoạch để nhận ngẫu nhiên các loại <strong>Tinh Hoa</strong> (Lam, Tím, Vàng, Cam). Độ hiếm của cây càng cao, cơ hội ra Tinh Hoa xịn càng lớn!</p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setShowGuide(false)}
+                                        className="mt-8 py-3.5 w-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-black uppercase tracking-widest hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all duration-300 cursor-pointer"
+                                    >
+                                        Đã Hiểu - Bắt Đầu Trồng Cây!
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </React.Fragment>

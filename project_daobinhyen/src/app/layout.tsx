@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from '@/app/context/AuthContext';
 import ProfileBar from '@/app/components/ProfileBar';
+import ShopGlobal from '@/app/components/ShopGlobal';
+import WeatherOverlay from '@/app/components/WeatherOverlay';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +35,8 @@ export default function RootLayout({
         {/* Bọc toàn bộ ứng dụng bên trong AuthProvider */}
         <AuthProvider>
           <ProfileBar />
+          <ShopGlobal />
+          <WeatherOverlay />
           {children}
         </AuthProvider>
       </body>

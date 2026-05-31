@@ -11,14 +11,12 @@ const auth = getAuth(app);
 interface PlotData {
     id: number;
     status: 'empty' | 'menu' | 'growing' | 'mature' | 'reward' | 'dead';
-    selectedTree: any | null;
+    selectedTree: any | null; // (Ở page.tsx là TreeOption | null)
     timeLeft: number;
     totalGrowTime?: number;
     endTime: number | null;
-
-    // 🔥 Cập nhật dòng reward này để chứa thông tin Tinh Hoa (màu sắc, icon, id)
-    reward: { type: string, name: string, color?: string, icon?: string, id?: string } | null;
-
+    // 🔥 Cập nhật kiểu dữ liệu của reward để lưu màu sắc và icon tinh hoa
+    reward: { type: string, name: string, color: string, icon: string, id: string } | null;
     isThirsty?: boolean;
     waterCount?: number;
     deathTime?: number | null;

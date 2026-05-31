@@ -24,11 +24,39 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -45%); }
-  to { opacity: 1; transform: translate(-50%, -50%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Thiết kế thanh cuộn siêu đẹp cho Shop */
+.shop-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shop-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.shop-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.shop-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #db2777;
 }
