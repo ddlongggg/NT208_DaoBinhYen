@@ -52,8 +52,8 @@ export default function SurveyPage() {
 
   const [stage, setStage] = useState('CHECKING');
   const [userName, setUserName] = useState('');
-  const [usernameError, setUsernameError] = useState(''); // 🆕 lỗi trùng tên
-  const [usernameLoading, setUsernameLoading] = useState(false); // 🆕 loading khi check
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameLoading, setUsernameLoading] = useState(false);
   const [currentSceneId, setCurrentSceneId] = useState('start_1');
   const [totalScore, setTotalScore] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -65,7 +65,8 @@ export default function SurveyPage() {
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
 
-  // Lấy global volume (0-1) từ localStorage
+  const [selectedTopic, setSelectedTopic] = useState('');
+
   const getGlobalVol = (): number => {
     if (typeof window === 'undefined') return 1;
     if (localStorage.getItem('app_muted') === 'true') return 0;
@@ -88,7 +89,6 @@ export default function SurveyPage() {
   ];
 
   const getResultText = (score: number) => {
-    // Tạo tiền đề hiển thị số điểm trước
     const scorePrefix = `[Kết quả: ${score}/100 điểm] - `;
 
     if (score <= 10) return `${scorePrefix} | Ta thấy lòng con đang trĩu nặng quá. Đừng cố gắng gồng mình thêm nữa, hãy để hòn đảo này ôm lấy và vỗ về nỗi đau của con.`;
@@ -104,10 +104,14 @@ export default function SurveyPage() {
     return `${scorePrefix} | Tuyệt diệu! Con đã hoàn toàn hòa mình vào sự thuần khiết của hòn đảo. Hãy tận hưởng và mang theo ánh sáng này đi khắp muôn nơi!`;
   };
 
-  // CHECK USER KHI VÀO TRANG — PHÂN NHÁNH 3 LUỒNG
+  // CHECK USER KHI VÀO TRANG — PHÂN NHÁNH LUỒNG & BẮT THAM SỐ TỪ DAILY CHECK-IN
   useEffect(() => {
     const checkUser = async () => {
       try {
+        // 🔥 KIỂM TRA XEM CÓ THAM SỐ ÉP KHẢO SÁT CHỦ ĐỀ KHÔNG 🔥
+        const urlParams = new URLSearchParams(window.location.search);
+        const forcedTopic = urlParams.get('topic');
+
         const res = await fetch('/api/user/getUserInFo');
         if (!res.ok) {
           router.replace('/login');
@@ -119,6 +123,14 @@ export default function SurveyPage() {
 
         if (!hasUsername) {
           setStage('START');
+        } else if (forcedTopic) {
+          // Bỏ qua màn hình giới thiệu, nhảy thẳng vào khảo sát chủ đề bị thiếu
+          setUserName(data.username);
+
+          setSelectedTopic(forcedTopic); // 🔥 LƯU VÀO STATE NẾU BỊ ÉP CHUYỂN TRANG
+
+          setStage('SURVEY');
+          setCurrentSceneId(`${forcedTopic}_q1`);
         } else if (!hasSurvey) {
           setUserName(data.username);
           setStage('INTRO');
@@ -195,6 +207,12 @@ export default function SurveyPage() {
   const handleNext = (nextId: string, weight?: number) => {
     playClickSound();
     if (weight) setTotalScore(prev => prev + weight);
+
+    // 🔥 NẾU CHUYỂN SANG CÂU SỐ 1, BẮT LẤY CHỦ ĐỀ VÀ LƯU LẠI
+    if (nextId === 'study_q1' || nextId === 'emotion_q1' || nextId === 'sleep_q1') {
+      setSelectedTopic(nextId.split('_')[0]);
+    }
+
     setDisplayedText('');
     setIsTyping(true);
     setCurrentSceneId(nextId);
@@ -206,7 +224,6 @@ export default function SurveyPage() {
     }
   };
 
-  // 🆕 Submit username với check trùng tên
   const handleUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
@@ -223,10 +240,10 @@ export default function SurveyPage() {
       if (res.status === 409) {
         const data = await res.json();
         setUsernameError(data.error || 'Tên này đã được dùng, hãy chọn tên khác!');
-        return; // Không chuyển stage
+        return;
       }
 
-      setStage('SURVEY'); // Tên OK → vào survey
+      setStage('SURVEY');
     } catch {
       setUsernameError('Lỗi kết nối, thử lại nhé!');
     } finally {
@@ -236,18 +253,20 @@ export default function SurveyPage() {
 
   const finishSurvey = () => {
     playClickSound();
-    fetch('/api/user/updateusername', {
+
+    // 🔥 LẤY CHỦ ĐỀ TỪ STATE ĐÃ LƯU (Không cắt chuỗi từ id nữa)
+    const topic = selectedTopic;
+
+    // 🔥 GỌI DUY NHẤT 1 API NÀY LÀ ĐỦ ĐỂ LƯU CẢ 3 TRƯỜNG VÀO FIREBASE
+    fetch('/api/user/updateMiniSurvey', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        score: totalScore,
-        surveyType: currentScene.id.split('_')[0],
-      }),
+      body: JSON.stringify({ topic, newScore: totalScore })
     });
+
     localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
     router.push('/homepage');
   };
-
   // --- RENDERING ---
 
   if (stage === 'CHECKING') {
@@ -303,14 +322,13 @@ export default function SurveyPage() {
                   value={userName}
                   onChange={(e) => {
                     setUserName(e.target.value);
-                    setUsernameError(''); // Xóa lỗi khi user gõ lại
+                    setUsernameError('');
                   }}
                   required
                   placeholder="Nhập tên của bạn..."
                   className={`w-full bg-transparent border-b-2 py-3 text-2xl text-[#4a4036] font-bold outline-none mb-2 placeholder:font-normal placeholder:text-gray-300 transition-colors
                     ${usernameError ? 'border-red-400 focus:border-red-500' : 'border-[#d2c4a7] focus:border-[#8c7d6c]'}`}
                 />
-                {/* 🆕 Hiển thị lỗi trùng tên */}
                 {usernameError && (
                   <p className="text-red-500 text-sm mb-4 font-medium">⚠️ {usernameError}</p>
                 )}

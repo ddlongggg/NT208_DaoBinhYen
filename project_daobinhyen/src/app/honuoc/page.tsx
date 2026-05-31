@@ -14,7 +14,7 @@ const HoNuocPage = () => {
   const [isClient, setIsClient] = useState(false);
   //Check Thời gian để hiện ảnh
   const [session, setSession] = useState<TimeSession>('midday');
-  const [status, setStatus] = useState<'idle' | 'preparing' | 'watching' | 'healing'>('idle');  
+  const [status, setStatus] = useState<'idle' | 'preparing' | 'watching' | 'healing'>('idle');
   //Quản lí nhạc nền
   const audioRef = useRef<HTMLAudioElement | null>(null);
   //Nút âm lượng
@@ -75,7 +75,7 @@ const HoNuocPage = () => {
       const audioClone = clickAudio.cloneNode(true) as HTMLAudioElement;
       audioClone.volume = volume * 0.8;
       const playPromise = audioClone.play();
-      
+
       if (playPromise !== undefined) {
         playPromise.catch(err => console.log("Chờ người dùng tương tác để phát âm thanh click:", err));
       }
@@ -116,7 +116,7 @@ const HoNuocPage = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      
+
       setTimeout(() => {
         setStatus('watching');
         setCountdown(5);
@@ -136,7 +136,7 @@ const HoNuocPage = () => {
     if (videoRef.current) {
       const video = videoRef.current;
       const canvas = document.createElement('canvas');
-      
+
       const displayWidth = video.clientWidth;
       const displayHeight = video.clientHeight;
 
@@ -153,11 +153,11 @@ const HoNuocPage = () => {
         const displayAspect = displayWidth / displayHeight;
         const sWidth = sHeight * displayAspect;
         const sX = (sourceWidth - sWidth) / 2;
-        const sY = 0; 
+        const sY = 0;
         ctx.drawImage(
           video,
-          sX, sY, sWidth, sHeight,          
-          0, 0, canvas.width, canvas.height 
+          sX, sY, sWidth, sHeight,
+          0, 0, canvas.width, canvas.height
         );
 
         const dataUrl = canvas.toDataURL('image/png');
@@ -176,26 +176,26 @@ const HoNuocPage = () => {
   const analyzeEmotionAndGetMessage = async (videoElement: HTMLVideoElement) => {
     try {
       const detection = await faceapi.detectSingleFace(
-        videoElement, 
+        videoElement,
         new faceapi.TinyFaceDetectorOptions({
-          inputSize: 256,          
+          inputSize: 256,
           scoreThreshold: 0.1
         })
       ).withFaceExpressions();
 
       console.log("Kết quả quét khuôn mặt AI thực tế:", detection);
-      
-      let primaryEmotion = "neutral"; 
+
+      let primaryEmotion = "neutral";
 
       if (detection && detection.expressions) {
         const emotions = detection.expressions as unknown as Record<string, number>;
-        
+
         const weights: Record<string, number> = {
           happy: 1.0,
-          neutral: 0.7,   
-          sad: 2.2,       
-          angry: 1.6,     
-          fearful: 2.0,    
+          neutral: 0.7,
+          sad: 2.2,
+          angry: 1.6,
+          fearful: 2.0,
           surprised: 1.4
         };
 
@@ -222,7 +222,7 @@ const HoNuocPage = () => {
 
   const fetchFirebaseEmotionMessage = async (emotion: string) => {
     try {
-      
+
       const docRef = doc(db, "emotion_messages", emotion);
       const docSnap = await getDoc(docRef);
 
@@ -234,7 +234,7 @@ const HoNuocPage = () => {
           return;
         }
       }
-      
+
       useFallbackEmotionMessage(emotion);
     } catch (err) {
       console.error(`Lỗi kết nối Firestore cho cảm xúc [${emotion}], chuyển sang danh sách dự phòng:`, err);
@@ -248,13 +248,13 @@ const HoNuocPage = () => {
     setMessage(randomMsg);
   };
 
-  
+
 
   useEffect(() => {
     setIsClient(true);
-    const audio = new Audio('/audio/healing-bg.m4a'); 
-    audio.loop = true; 
-    audio.volume = volume; 
+    const audio = new Audio('/audio/healing-bg.m4a');
+    audio.loop = true;
+    audio.volume = volume;
     audioRef.current = audio;
 
     const playAudio = () => {
@@ -279,7 +279,7 @@ const HoNuocPage = () => {
         await faceapi.nets.faceLandmark68TinyNet.loadFromUri('/models');
         await faceapi.nets.faceExpressionNet.loadFromUri('/models');
         console.log("Bộ ba AI Tiny Models đã nạp thành công");
-        
+
         // Khởi tạo thời gian sau khi AI đã sẵn sàng
         const checkTime = () => {
           const hour = new Date().getHours();
@@ -289,7 +289,7 @@ const HoNuocPage = () => {
           else if (hour >= 15 && hour < 18) setSession('afternoon');
           else setSession('night');
         };
-        checkTime(); 
+        checkTime();
         timer = setInterval(checkTime, 60000);
 
       } catch (err) {
@@ -306,7 +306,7 @@ const HoNuocPage = () => {
         audioRef.current.pause();
         audioRef.current = null;
       }
-    };  
+    };
   }, []);
 
   useEffect(() => {
@@ -325,68 +325,68 @@ const HoNuocPage = () => {
           stopCamera();
         }
       };
-      
+
       triggerAIAndCapture();
     }
   }, [countdown]);
 
-  
+
 
   if (!isClient) return null;
 
   return (
-    <div 
+    <div
       className="relative min-h-screen w-full flex items-center justify-center bg-cover bg-center overflow-hidden"
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
       <div className="absolute inset-0 bg-black/20 z-0" />
 
-    {/* VÙNG CHẠM NƯỚC ĐA GIÁC */}
-    <div 
-      onClick={handleWaterAreaClick} // Hàm tính tọa độ tương đối
-      className={styles.clickableWater} // Vẽ vùng chạm trong honuoc.module.css
-    >
-      {/* 🌊 RENDER SÓNG NƯỚC ĐA TẦNG PHÁT SÁNG */}
-      {ripples.map((ripple) => (
-        <React.Fragment key={ripple.id}>
-          {/* Tầng sóng 1 - Lan ra ngay lập tức */}
-          <span
-            className={styles.waterRipple}
-            style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
-          />
-          {/* Tầng sóng 2 - Trễ 0.2s */}
-          <span
-            className={`${styles.waterRipple} ${styles.rippleDelay1}`}
-            style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
-          />
-          {/* Tầng sóng 3 - Trễ 0.4s */}
-          <span
-            className={`${styles.waterRipple} ${styles.rippleDelay2}`}
-            style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
-          />
-        </React.Fragment>
-      ))}
+      {/* VÙNG CHẠM NƯỚC ĐA GIÁC */}
+      <div
+        onClick={handleWaterAreaClick} // Hàm tính tọa độ tương đối
+        className={styles.clickableWater} // Vẽ vùng chạm trong honuoc.module.css
+      >
+        {/* 🌊 RENDER SÓNG NƯỚC ĐA TẦNG PHÁT SÁNG */}
+        {ripples.map((ripple) => (
+          <React.Fragment key={ripple.id}>
+            {/* Tầng sóng 1 - Lan ra ngay lập tức */}
+            <span
+              className={styles.waterRipple}
+              style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
+            />
+            {/* Tầng sóng 2 - Trễ 0.2s */}
+            <span
+              className={`${styles.waterRipple} ${styles.rippleDelay1}`}
+              style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
+            />
+            {/* Tầng sóng 3 - Trễ 0.4s */}
+            <span
+              className={`${styles.waterRipple} ${styles.rippleDelay2}`}
+              style={{ left: ripple.x, top: ripple.y, width: '100px', height: '100px' }}
+            />
+          </React.Fragment>
+        ))}
 
-      {/* ✨ RENDER CÁC HẠT BỌT NƯỚC LI TI BẮN RA */}
-      {drops.map((drop) => (
-        <span
-          key={drop.id}
-          className={styles.waterDrop}
-          style={{
-            left: drop.x,
-            top: drop.y,
-            width: `${drop.size}px`,
-            height: `${drop.size}px`,
-            ['--tx' as any]: drop.tx,
-            // 🌟 Ép độ nẩy chiều dọc của bọt nước ngắn lại bằng cách nhân thêm 0.4 để đồng bộ với elip sóng
-            ['--ty' as any]: `calc(${drop.ty} * 0.4)`,
-          }}
-        />
-      ))}
-    </div>
-  
-      {!isOpen && ( 
-        <button 
+        {/* ✨ RENDER CÁC HẠT BỌT NƯỚC LI TI BẮN RA */}
+        {drops.map((drop) => (
+          <span
+            key={drop.id}
+            className={styles.waterDrop}
+            style={{
+              left: drop.x,
+              top: drop.y,
+              width: `${drop.size}px`,
+              height: `${drop.size}px`,
+              ['--tx' as any]: drop.tx,
+              // 🌟 Ép độ nẩy chiều dọc của bọt nước ngắn lại bằng cách nhân thêm 0.4 để đồng bộ với elip sóng
+              ['--ty' as any]: `calc(${drop.ty} * 0.4)`,
+            }}
+          />
+        ))}
+      </div>
+
+      {!isOpen && (
+        <button
           onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
           className="absolute bottom-[18%] left-[45%] z-20 group text-white text-left border-none outline-none cursor-pointer bg-transparent"
         >
@@ -400,44 +400,44 @@ const HoNuocPage = () => {
           </div>
         </button>
       )}
-  
+
       {isOpen && (
         <div className="relative z-10 w-[85%] max-w-5xl aspect-[16/10] md:aspect-video rounded-[3rem] border border-white/10 shadow-[0_0_80px_rgba(30,58,138,0.3)] overflow-hidden bg-black/30 backdrop-blur-2xl animate-in fade-in zoom-in duration-700">
-          
-          <button 
+
+          <button
             onClick={() => { stopCamera(); setIsOpen(false); setStatus('idle'); setCountdown(null); }}
             className="absolute top-8 right-10 z-50 text-white/30 hover:text-white/80 text-2xl transition-colors"
           >
             ✕
           </button>
-  
+
           <div className="absolute inset-0 flex items-center justify-center">
-            
+
             {/* TRẠNG THÁI CHỜ (Idle): Biến toàn bộ khung bên trái thành vùng click */}
             {status === 'idle' && (
-                  <button 
-                    onClick={startHealing}
-                    className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-blue-950/20 hover:bg-blue-500/10 transition-all duration-500 group"
-                  >
-                    <span className="text-white/40 tracking-[0.2em] uppercase text-[11px] font-light group-hover:text-white/80 transition-colors duration-300">
-                      Chạm để soi gương thần
-                    </span>
-                  </button>
-                )}
+              <button
+                onClick={startHealing}
+                className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-blue-950/20 hover:bg-blue-500/10 transition-all duration-500 group"
+              >
+                <span className="text-white/40 tracking-[0.2em] uppercase text-[11px] font-light group-hover:text-white/80 transition-colors duration-300">
+                  Chạm để soi gương thần
+                </span>
+              </button>
+            )}
 
             {/* LÚC CHUẨN BỊ CHỤP (watching) */}
             {(status === 'preparing' || status === 'watching') && (
               <div className="relative w-full h-full animate-in fade-in duration-1000 flex items-center justify-center bg-black/20 p-6 md:p-10">
-                
+
                 <div className="w-full md:w-[50%] h-full relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black/40">
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    muted 
-                    className="w-full h-full object-cover opacity-85 scale-x-[-1] filter blur-[0.5px]" 
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    className="w-full h-full object-cover opacity-85 scale-x-[-1] filter blur-[0.5px]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-blue-950/20 via-transparent to-transparent mix-blend-color pointer-events-none" />
-                  
+
                   {/*Hiện thông báo nhắc nhở khi ở trạng thái preparing */}
                   {status === 'preparing' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-20 p-6 text-center animate-in fade-in zoom-in duration-500">
@@ -482,7 +482,7 @@ const HoNuocPage = () => {
             {/* LÚC HIỂN THỊ KẾT QUẢ (healing) */}
             {status === 'healing' && (
               <div className="w-full h-full flex flex-col md:flex-row animate-in fade-in duration-1000">
-                
+
                 {/* Khung bên trái chứa ảnh kết quả:
                   Sử dụng class w-full md:w-1/2 và ảnh bên trong để object-cover.
                   Vì cả khung video lúc chuẩn bị chụp và khung ảnh chụp này có tỷ lệ hiển thị (Aspect Ratio) đồng nhất với nhau,
@@ -491,9 +491,9 @@ const HoNuocPage = () => {
                 <div className="w-full md:w-1/2 h-[45%] md:h-full relative border-b md:border-b-0 md:border-r border-white/5 bg-black/20 flex items-center justify-center p-6 md:p-10 overflow-hidden">
                   <div className="w-full h-full relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                     {capturedImg ? (
-                      <img 
-                        src={capturedImg} 
-                        alt="Bóng hình phản chiếu" 
+                      <img
+                        src={capturedImg}
+                        alt="Bóng hình phản chiếu"
                         className="w-full h-full object-cover opacity-75 filter sepia-[10%] contrast-[1.05]"
                       />
                     ) : (
@@ -512,7 +512,7 @@ const HoNuocPage = () => {
                       "{message}"
                     </p>
                     <div className="pt-4 text-center md:text-left">
-                      <button 
+                      <button
                         onClick={() => setStatus('idle')}
                         className="px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-white/50 text-[10px] uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all shadow-sm"
                       >
@@ -530,23 +530,23 @@ const HoNuocPage = () => {
 
       {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 text-white">
-          <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Vol</span>
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.01" 
-            value={volume} 
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              setVolume(v);
-              if(audioRef.current) audioRef.current.volume = v;
-            }} 
-            className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" 
-          />
-        </div>
+        <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Vol</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={volume}
+          onChange={(e) => {
+            const v = parseFloat(e.target.value);
+            setVolume(v);
+            if (audioRef.current) audioRef.current.volume = v;
+          }}
+          className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white"
+        />
+      </div>
 
-      <button 
+      <button
         onClick={() => router.push('/homepage')}
         className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full border border-white/20 transition-all group"
       >
@@ -556,10 +556,10 @@ const HoNuocPage = () => {
 
       {/* Status Bar - Đẩy qua góc dưới bên phải, tăng kích thước để che logo Gemini */}
       <div className="absolute bottom-2 right-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
-          <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
+        <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
           {session} mode
-          </p>
-      </div>  
+        </p>
+      </div>
     </div>
   );
 };
