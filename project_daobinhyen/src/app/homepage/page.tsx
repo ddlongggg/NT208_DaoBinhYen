@@ -98,9 +98,9 @@ export default function DynamicIsland() {
     const zonesInfo: Record<string, any> = {
         "/haidang": { title: "Tháp Canh Minh Triết", desc: "Nơi lưu giữ những bí mật cổ xưa của hòn đảo.", img: "HaiDangg.png" },
         "/thanthu": { title: "Cây Thần Thụ", desc: "Trái tim của đảo, nơi nguồn năng lượng sống dồi dào.", img: "TrungTamDao.png" },
-        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/island/Island6PM.jpg" },
-        "/hangdong": { title: "Động Chữa Lành", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "HangDong.png" },
-        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/island/Island2PM.jpg" },
+        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/wooden-house/midday.png" },
+        "/suoinguon": { title: "Suối Nguồn Cảm Xúc", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "/backgroundsuoinguon/SuoiNguonCamXuc12AM.png" },
+        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/vuonhoa/VuonHoa.png" },
         "/vachda": { title: "Vách Đá Tầm Nhìn", desc: "Nơi cao nhất để phóng tầm mắt ra đại dương.", img: "/island/Island10AM.jpg" },
         "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Mặt hồ phẳng lặng giúp bạn nhìn thấu chính mình.", img: "HoNuoc.png" }
     };
@@ -221,15 +221,15 @@ export default function DynamicIsland() {
                     </div>
                 </Link>
 
-                {/* VÙNG 4: Hang động */}
+                {/* VÙNG 4: Suối nguồn */}
                 <Link
-                    href="/hangdong"
-                    onClick={(e) => handleZoneClick(e, "/hangdong")}
+                    href="/suoinguon"
+                    onClick={(e) => handleZoneClick(e, "/suoinguon")}
                     className="absolute z-20 cursor-pointer rounded-xl flex items-center justify-center group"
                     style={{ top: '43%', left: '35%', width: '11%', height: '12%' }}
                 >
                     <div className="absolute w-48 md:w-56 p-4 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none flex flex-col items-center text-center">
-                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Động Chữa Lành</h3>
+                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Suối Nguồn Cảm Xúc</h3>
                         <div className="w-8 h-[2px] bg-white mb-2 rounded-full shadow-[0_0_5px_white]"></div>
                         <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md italic">Bấm để xem chi tiết</p>
                     </div>

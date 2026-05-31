@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from '@/app/context/AuthContext';
 import ProfileBar from '@/app/components/ProfileBar';
 import ShopGlobal from '@/app/components/ShopGlobal';
-import WeatherOverlay from '@/app/components/WeatherOverlay';
+import PeriodicCheckin from '@/app/components/PeriodicCheckin';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,7 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <ProfileBar />
           <ShopGlobal />
-          <WeatherOverlay />
+          <PeriodicCheckin />
           {children}
         </AuthProvider>
       </body>

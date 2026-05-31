@@ -91,10 +91,43 @@ export default function ShopGlobal() {
     const [mounted, setMounted] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
     const [shopTab, setShopTab] = useState<'seeds' | 'pets'>('seeds');
+    // 🔥 1. KHAI BÁO THÊM BIẾN DỮ LIỆU CỤC BỘ
+    const [localData, setLocalData] = useState<any>(null);
 
     // 🔥 STATE MỚI: QUẢN LÝ THÔNG BÁO CUSTOM 🔥
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+    // 🔥 2. ĐỒNG BỘ DỮ LIỆU
+    useEffect(() => {
+        if (userDataExtended) {
+            setLocalData(userDataExtended);
+        }
+    }, [userDataExtended]);
+    // 🔥 3. LẮNG NGHE SỰ KIỆN ĐỂ CẬP NHẬT TIỀN KHI RUNG CÂY
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const timestamp = new Date().getTime();
+                const res = await fetch(`/api/user/getUserInFo?t=${timestamp}`, {
+                    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setLocalData(data);
+                }
+            } catch (error) {
+                console.error("Lỗi gọi API tại ShopGlobal:", error);
+            }
+        };
+
+        fetchUserData();
+        window.addEventListener('userDataUpdated', fetchUserData);
+        return () => window.removeEventListener('userDataUpdated', fetchUserData);
+    }, []);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -110,7 +143,7 @@ export default function ShopGlobal() {
 
     if (!isAllowed || !firebaseUser) return null;
 
-    const activeData = userDataExtended?.data || userDataExtended || {};
+    const activeData = localData?.data || localData || userDataExtended?.data || userDataExtended || {};
     const moneyCount = Number(activeData.money ?? 0);
     const seedCount = Number(activeData.seeds ?? 0);
     const leavesCount = Number(activeData.leaves ?? 0);
@@ -237,6 +270,7 @@ export default function ShopGlobal() {
                 const data = await res.json();
                 if (data.success) {
                     setNotification({ message: `Giao dịch thành công: Nhận ${itemName}!`, type: 'success' });
+                    window.dispatchEvent(new Event('userDataUpdated'));
                 } else {
                     setNotification({ message: `Lỗi lưu trữ: ${data.message}`, type: 'error' });
                 }
