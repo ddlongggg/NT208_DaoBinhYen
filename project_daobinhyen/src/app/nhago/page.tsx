@@ -197,7 +197,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       {/* NÚT CÀI ĐẶT */}
       <SettingsButton />
       {activePanel && (
-        <div className="absolute top-9 right-30 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
+        <div className="absolute top-20 right-20 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
               <>
                 <h3 className="text-xl font-bold mb-1 flex items-center gap-2">🔊 My Speaker</h3>
