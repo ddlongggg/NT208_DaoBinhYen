@@ -5,31 +5,102 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SettingsButton from '@/app/components/SettingsButton';
 
+interface UserProfile {
+    name: string;
+    points: number;
+    emotion: string;
+    gold: number;
+    level: number;
+}
+
 export default function DynamicIsland() {
+
     const router = useRouter();
     const [bgImage, setBgImage] = useState<string>('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [userEmotion, setUserEmotion] = useState('Hạnh phúc');
     const [hoveredZone, setHoveredZone] = useState<string | null>(null);
     const [username, setUsername] = useState('Lữ Khách');
+    const [userData, setUserData] = useState({
+        username: 'Đang tải...',
+        lastSurveyScore: 0,
+        money: 0,
+        seeds: 0,
+        avatar: 'logo.png'
+    });
 
     useEffect(() => {
-        fetch('/api/user/getUserInFo')
-            .then(res => res.json())
-            .then(data => { if (data.username) setUsername(data.username); })
-            .catch(() => {});
+        const fetchUserData = async () => {
+            try {
+                const res = await fetch('/api/user/getUserInFo');
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Đồng bộ cả username cũ lẫn cụm dữ liệu mới
+                    if (data.username) setUsername(data.username);
+
+                    setUserData({
+                        username: data.username || 'Lữ Khách',
+                        lastSurveyScore: Number(data.lastSurveyScore ?? 0),
+                        money: Number(data.money ?? 0),
+                        seeds: Number(data.seeds ?? 0),
+                        avatar: 'logo.png' // Hoặc data.avatar nếu sau này bạn bổ sung vào Firebase
+                    });
+
+                    // Tự động tính toán cảm xúc dựa trên lastSurveyScore vừa lấy về
+                    setUserEmotion(calculateEmotion(Number(data.lastSurveyScore ?? 0)));
+                }
+            } catch (error) {
+                console.error("Lỗi gọi API profile:", error);
+            }
+        };
+
+        fetchUserData();
     }, []);
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
     const [selectedZone, setSelectedZone] = useState<{ title: string, path: string, desc: string, img: string } | null>(null);
 
+
+    // --- PHẦN MỚI: Quản lý dữ liệu người dùng ---
+
+    // Hàm tính Level từ Points (Ví dụ: mỗi 100 điểm lên 1 level)
+    const calculateLevel = (pts: number) => Math.floor(pts / 10) + 1;
+
+    // Hàm tính Emotion từ Points
+    const calculateEmotion = (pts: number) => {
+        if (pts < 10) return 'Vực Thẳm Tâm Linh';
+        if (pts < 20) return 'Sương Mù Uất Nghẹn';
+        if (pts < 30) return 'Tro Tàn Lặng Lẽ';
+        if (pts < 40) return 'Chênh Vênh Độc Hành';
+        if (pts < 50) return 'Tĩnh Lặng Thấu Suốt';
+        if (pts < 60) return 'Tia Sáng Khởi Nguyên';
+        if (pts < 70) return 'Vườn Hoa Chớm Nở';
+        if (pts < 80) return 'Rạng Rỡ Ánh Dương';
+        if (pts < 90) return 'Thăng Hoa Thuần Khiết';
+        return 'Đại Ngộ Thiên Đường'; // Trên 900 điểm
+    };
+
+    const emotionMessages: Record<string, string> = {
+        'Vực Thẳm Tâm Linh': 'Trạng thái cảm xúc tồi tệ nhất, có lẽ bạn đang gặp phải rất nhiều vấn đề trong cuộc sống.',
+        'Sương Mù Uất Nghẹn': 'Lòng đầy tâm sự và sự lạc lõng, hãy cho phép bản thân nghỉ ngơi một chút.',
+        'Tro Tàn Lặng Lẽ': 'Sức cùng lực kiệt, nhưng sâu trong tro tàn vẫn còn mầm sống chờ đợi.',
+        'Chênh Vênh Độc Hành': 'Bước chân đơn độc đôi khi mỏi mệt, nhưng đó là lúc bạn tìm thấy chính mình.',
+        'Tĩnh Lặng Thấu Suốt': 'Tâm trí bắt đầu lặng sóng, bạn đã đủ bình tĩnh để nhìn thấu mọi chuyện.',
+        'Tia Sáng Khởi Nguyên': 'Hy vọng đã nhen nhóm, một khởi đầu mới đang chờ đợi bạn phía trước.',
+        'Vườn Hoa Chớm Nở': 'Niềm vui đang lan tỏa, hãy tận hưởng những điều nhỏ bé tuyệt vời này.',
+        'Rạng Rỡ Ánh Dương': 'Hạnh phúc tràn đầy, bạn đang là nguồn năng lượng ấm áp cho mọi người.',
+        'Thăng Hoa Thuần Khiết': 'Cảm xúc viên mãn, không gì có thể làm lay chuyển sự an yên trong bạn.',
+        'Đại Ngộ Thiên Đường': 'Trạng thái hạnh phúc tối thượng, bạn đã thực sự tìm thấy thiên đường của riêng mình.'
+    };
+
     // Dữ liệu bổ sung cho các bảng hiện lên
     const zonesInfo: Record<string, any> = {
         "/haidang": { title: "Tháp Canh Minh Triết", desc: "Nơi lưu giữ những bí mật cổ xưa của hòn đảo.", img: "HaiDangg.png" },
         "/thanthu": { title: "Cây Thần Thụ", desc: "Trái tim của đảo, nơi nguồn năng lượng sống dồi dào.", img: "TrungTamDao.png" },
-        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/island/Island6PM.jpg" },
-        "/hangdong": { title: "Động Chữa Lành", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "HangDong.png" },
-        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/island/Island2PM.jpg" },
+        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/wooden-house/midday.png" },
+        "/suoinguon": { title: "Suối Nguồn Cảm Xúc", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "/backgroundsuoinguon/SuoiNguonCamXuc12AM.png" },
+        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/vuonhoa/VuonHoa.png" },
         "/vachda": { title: "Vách Đá Tầm Nhìn", desc: "Nơi cao nhất để phóng tầm mắt ra đại dương.", img: "/island/Island10AM.jpg" },
         "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Mặt hồ phẳng lặng giúp bạn nhìn thấu chính mình.", img: "HoNuoc.png" }
     };
@@ -81,6 +152,7 @@ export default function DynamicIsland() {
         return <div className="bg-black w-screen h-screen" />;
     }
 
+
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black">
             <style>{`
@@ -106,42 +178,6 @@ export default function DynamicIsland() {
                     backgroundRepeat: 'no-repeat',
                 }}
             >
-                {/* Giữ nguyên Profile Bar của bạn */}
-                <div className="absolute top-18 left-6 z-[100] flex flex-col items-start gap-3">
-                    <div
-                        onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className="flex items-center gap-3 p-2 pr-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg cursor-pointer hover:bg-white/20 transition-all duration-300 group"
-                    >
-                        <div className="relative w-10 h-10 rounded-full border-2 border-pink-400 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(244,114,182,0.5)] group-hover:scale-105 transition-transform">
-                            <img src="logo.png" alt="User" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-white text-sm font-bold leading-tight shadow-black drop-shadow-md">{username}</span>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_#4ade80]"></span>
-                                <span className="text-gray-200 text-[11px] font-medium uppercase tracking-wider">{userEmotion}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {isProfileOpen && (
-                        <>
-                            <div className="fixed inset-0 z-[-1]" onClick={() => setIsProfileOpen(false)} />
-                            <div className="w-72 p-6 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-20 h-20 rounded-full border-2 border-white/30 p-1 mb-3">
-                                        <img src="logo.png" className="w-full h-full rounded-full object-cover" />
-                                    </div>
-                                    <h2 className="text-white font-bold text-xl mb-1">Lữ Khách Phương Xa</h2>
-                                    <p className="text-gray-400 text-xs mb-4 italic">"Mỗi ngày là một cuộc thám hiểm mới"</p>
-                                    <button className="mt-5 w-full py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity">
-                                        NHẬT KÝ HÀNH TRÌNH
-                                    </button>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
 
                 {/* VÙNG 1: Ngọn Hải Đăng */}
                 <Link
@@ -185,15 +221,15 @@ export default function DynamicIsland() {
                     </div>
                 </Link>
 
-                {/* VÙNG 4: Hang động */}
+                {/* VÙNG 4: Suối nguồn */}
                 <Link
-                    href="/hangdong"
-                    onClick={(e) => handleZoneClick(e, "/hangdong")}
+                    href="/suoinguon"
+                    onClick={(e) => handleZoneClick(e, "/suoinguon")}
                     className="absolute z-20 cursor-pointer rounded-xl flex items-center justify-center group"
                     style={{ top: '43%', left: '35%', width: '11%', height: '12%' }}
                 >
                     <div className="absolute w-48 md:w-56 p-4 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none flex flex-col items-center text-center">
-                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Động Chữa Lành</h3>
+                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Suối Nguồn Cảm Xúc</h3>
                         <div className="w-8 h-[2px] bg-white mb-2 rounded-full shadow-[0_0_5px_white]"></div>
                         <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md italic">Bấm để xem chi tiết</p>
                     </div>

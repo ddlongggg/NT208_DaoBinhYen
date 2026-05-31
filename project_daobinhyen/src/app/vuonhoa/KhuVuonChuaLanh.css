@@ -1,0 +1,894 @@
+/* BỐ CỤC TỔNG THỂ */
+.garden-overlay {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #0f172a;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* KHUNG BẢO VỆ TỶ LỆ CỐ ĐỊNH */
+.garden-board {
+    position: relative;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    /* Phá bỏ giới hạn chiều ngang cũ */
+    max-height: 100vh !important;
+
+    background-image: url('/vuonhoa/VuonHoa.png');
+    background-size: 100vw 100vh !important;
+    /* Bắt buộc ảnh giãn căng ra 4 góc màn hình */
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 999;
+}
+
+/* GLASSMORPHISM PANELS */
+.glass-panel {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(20, 35, 55, 0.8), rgba(15, 25, 45, 0.6));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(135, 206, 235, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(135, 206, 235, 0.2);
+    padding: 16px;
+    z-index: 10;
+}
+
+.panel-header {
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 8px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.sub-text {
+    font-size: 13px;
+    text-align: center;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+}
+
+/* MENU CHỌN CÂY */
+.panel-menu {
+    top: 15%;
+    left: 22%;
+    width: 340px;
+}
+
+.menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.item-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.item-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    color: #fff;
+}
+
+.item-info p {
+    margin: 0;
+    font-size: 11px;
+    color: #a5f3fc;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #38bdf8, #0284c7);
+    border: 1px solid #bae6fd;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.inventory-status {
+    text-align: center;
+    font-size: 12px;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.cancel-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* BẢNG CHÚC MỪNG & PHẦN THƯỞNG */
+.panel-congrats {
+    bottom: 8%;
+    left: 35%;
+    width: 300px;
+}
+
+.panel-reward-top {
+    top: 8%;
+    right: 2%;
+    width: 320px;
+}
+
+.reward-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.reward-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(135, 206, 235, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    width: 45%;
+}
+
+.reward-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+}
+
+.reward-icon.lg {
+    font-size: 48px;
+}
+
+.reward-box p {
+    margin: 0;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.step-label {
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 15px;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Ô ĐẤT TRỒNG CÂY TƯƠNG TÁC */
+/* CẤU HÌNH CHUNG CHO CÁC VÙNG KHU ĐẤT */
+.plot-area {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    /* Cho phép click xuyên qua vùng trống hình chữ nhật */
+    overflow: visible !important;
+    /* Đảm bảo không bộ phận nào bị cắt cụt */
+}
+
+/* Kích hoạt tương tác chuột chuẩn xác cho các thành phần thực tế */
+.soil-base,
+.timer-badge,
+.harvest-badge,
+.tutorial-text,
+.hover-pointer,
+.sapling-img,
+.mature-tree-img {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* =======================================================
+   ĐỊNH VỊ VÀ ĐƯA CLIP-PATH XUỐNG LỚP SOIL-BASE (NỀN ĐẤT)
+   ======================================================= */
+
+/* Ô đất số 0 */
+.plot-0 {
+    position: absolute;
+    top: 56.5%;
+    left: 13%;
+    width: 23.5%;
+    /* Thay cho 450px */
+    height: 28%;
+    /* Thay cho 300px */
+}
+
+.plot-0 .soil-base {
+    clip-path: polygon(0% 60%, 20% 84%, 93% 42%, 70% 28%);
+}
+
+/* Ô đất số 1 (Ô ở giữa đang bị lỗi của bạn) */
+.plot-1 {
+    position: absolute;
+    top: 38.5%;
+    left: 51.5%;
+    width: 12.5%;
+    /* Thay cho 240px */
+    height: 20.5%;
+    /* Thay cho 220px */
+}
+
+.plot-1 .soil-base {
+    clip-path: polygon(41% 63%, 91% 71%, 46.5% 88.4%, -3% 74%);
+}
+
+/* Ô đất số 2 */
+.plot-2 {
+    position: absolute;
+    top: 57%;
+    left: 79%;
+    width: 15.5%;
+    /* Thay cho 300px */
+    height: 28%;
+    /* Thay cho 300px */
+}
+
+.plot-2 .soil-base {
+    clip-path: polygon(46% 38%, 93% 50%, 60% 75%, 7% 58%);
+}
+
+.fixed-bottom {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+/* Cấu hình lớp nền đất phẳng */
+.soil-base {
+    width: 100% !important;
+    height: 100% !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    /* Nằm dưới cây và chữ */
+}
+
+/* Đảm bảo cây trồng đứng thẳng hoàn toàn, to rõ và không bị bóp méo */
+/* Đảm bảo cây trồng đứng thẳng hoàn toàn, to rõ và không bị bóp méo */
+.sapling-img,
+.mature-tree-img {
+    position: absolute;
+    width: auto;
+    object-fit: contain;
+    z-index: 2;
+    /* Nằm trên lớp đất */
+    transform: translateX(-50%) !important;
+    /* Giữ cân bằng tâm gốc cây */
+}
+
+/* 2. KÍCH THƯỚC RIÊNG CHO CÂY CON (Cho nhỏ lại chút để làm mầm) */
+.sapling-img {
+    max-height: 45%;
+    /* Giảm từ 65% xuống 45% để nhìn nhỏ nhắn hơn */
+}
+
+/* 3. KÍCH THƯỚC RIÊNG CHO CÂY TRƯỞNG THÀNH (Cho to hẳn lên) */
+.mature-tree-img {
+    max-height: 150%;
+    /* Tăng mạnh lên 95% hoặc 100% để cây trông đại thụ, xum xuê */
+}
+
+.plot-0 .sapling-img,
+.plot-0 .mature-tree-img {
+    left: 48%;
+    bottom: 39%;
+    /* Đẩy gốc cây lên đúng tâm polygon của ô 0 */
+}
+
+/* Ô đất số 1 (Ô nhỏ ở giữa phía trên) */
+.plot-1 .sapling-img,
+.plot-1 .mature-tree-img {
+    left: 44%;
+    bottom: 17%;
+    /* Đẩy gốc cây vào giữa polygon của ô 1 */
+}
+
+/* Ô đất số 2 (Phía dưới bên phải) */
+.plot-2 .sapling-img,
+.plot-2 .mature-tree-img {
+    left: 52%;
+    bottom: 34%;
+    /* Đẩy gốc cây vào giữa polygon của ô 2 */
+}
+
+/* ---------------- Ô ĐẤT SỐ 1 ---------------- */
+/* Chữ TRỒNG / THU HOẠCH nằm ngay giữa ô đất */
+.plot-0 .text-empty,
+.plot-0 .text-mature {
+    top: 45%;
+}
+
+.plot-1 .text-empty,
+.plot-1 .text-mature {
+    top: 65%;
+}
+
+/* Chữ ĐANG LỚN nằm phía dưới ô đất */
+.plot-0 .text-growing,
+.plot-1 .text-growing {
+    top: 85%;
+}
+
+/* Bảng thời gian nằm ngay dưới chữ ĐANG LỚN */
+.plot-0 .timer-growing,
+.plot-1 .timer-growing {
+    top: 93%;
+}
+
+
+/* ---------------- Ô ĐẤT SỐ 2 ---------------- */
+.plot-2 .text-empty,
+.plot-2 .text-mature {
+    top: 50%;
+}
+
+.plot-2 .text-growing {
+    top: 80%;
+}
+
+.plot-2 .timer-growing {
+    top: 88%;
+}
+
+/* SỬA HIỆU ỨNG PHÁT SÁNG (Dùng filter để không bị clip-path xén mất viền sáng bên ngoài) */
+.empty-glow {
+    background: rgba(254, 240, 138, 0.15) !important;
+    filter: drop-shadow(0 0 15px #fef08a);
+}
+
+.growing-glow {
+    background: rgba(167, 243, 208, 0.15) !important;
+    filter: drop-shadow(0 0 15px #a7f3d0);
+}
+
+.mature-glow {
+    background: rgba(253, 224, 71, 0.2) !important;
+    filter: drop-shadow(0 0 25px #fde047);
+}
+
+.tutorial-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    /* Thêm viền đen dày hơn một chút để chữ dễ đọc trên nền đất sáng màu */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8);
+    z-index: 4;
+    left: 50%;
+    transform: translateX(-50%);
+
+    /* 👉 ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT: Kéo text xuống cách đáy 15% (Trùng vị trí ô đất) */
+    bottom: 30%;
+
+    /* Vô hiệu hóa click vào chữ để người chơi có thể click xuyên qua chữ trúng miếng đất */
+    pointer-events: none;
+}
+
+/* Sửa lại class .hover-pointer (Icon chuột/bàn tay nhảy) */
+.hover-pointer {
+    position: absolute;
+    /* */
+    font-size: 24px;
+    /* */
+    animation: bounce 1.5s infinite;
+    /* */
+    z-index: 3;
+    /* */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* BADGES THÔNG BÁO PHÍA TRÊN CÂY */
+/* =========================================
+   1. CUSTOM LẠI BẢNG ĐẾM THỜI GIAN
+   ========================================= */
+/* =========================================
+   1. THIẾT LẬP VỊ TRÍ GỐC (BASE) CHO TEXT & TIMER
+   ========================================= */
+.tutorial-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8);
+    z-index: 5;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    /* Vô hiệu hoá click đè chữ */
+}
+
+.timer-badge {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.75));
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.5);
+    padding: 8px 16px;
+    margin-top: 10px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 5;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    animation: pulse-border 2s infinite;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+
+    /* 🔥 THÊM 2 DÒNG NÀY ĐỂ BẢNG LUÔN GIỮ ĐÚNG FORM 🔥 */
+    white-space: nowrap;
+    /* Bắt buộc chữ hiển thị trên 1 dòng */
+    min-width: 150px;
+    /* Đảm bảo chiều rộng tối thiểu */
+}
+
+/* Các thuộc tính chữ bên trong (nếu bạn chưa cập nhật theo hướng dẫn ở trên) */
+.timer-label {
+    font-size: 10px;
+    color: #bae6fd;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.timer-value {
+    font-size: 16px;
+    color: #ffffff;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+
+}
+
+@keyframes pulse-border {
+
+    0%,
+    100% {
+        border-color: rgba(56, 189, 248, 0.4);
+        box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+    }
+
+    50% {
+        border-color: rgba(186, 230, 253, 1);
+        box-shadow: 0 4px 20px rgba(56, 189, 248, 0.8);
+    }
+}
+
+.harvest-badge {
+    position: absolute;
+    /* Chuyển sang trạng thái tự do để dễ canh tọa độ */
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.8);
+    z-index: 10;
+    /* Nổi lên trên cùng để dễ click */
+
+    /* Ép nút luôn nằm chính giữa theo chiều ngang của ô đất */
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    /* Bắt buộc chữ không bị rớt dòng */
+}
+
+.plot-0 .harvest-badge {
+    bottom: 20%;
+    /* Chỉnh số này lên xuống để nút cao/thấp so với ngọn cây */
+}
+
+.plot-1 .harvest-badge {
+    bottom: -12%;
+    /* Phù hợp với ô giữa */
+}
+
+.plot-2 .harvest-badge {
+    bottom: 90%;
+    /* Phù hợp với ô bên phải */
+}
+
+.harvest-text {
+    color: #fef08a;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.sapling-img {
+    filter: drop-shadow(0 0 10px #a7f3d0);
+}
+
+.mature-tree-img {
+    filter: drop-shadow(0 0 20px #fde047);
+}
+
+/* ANIMATIONS */
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.pop-in {
+    animation: pop-in 0.3s ease-out forwards;
+}
+
+.pulse {
+    animation: pulse-opacity 2s infinite;
+}
+
+@keyframes pulse-opacity {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Viền đất khi khô cằn */
+.thirsty-glow {
+    box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.4) inset !important;
+    /* Đất màu đỏ cam héo hon */
+    border: 2px solid rgba(239, 68, 68, 0.6);
+}
+
+.water-btn {
+    position: relative !important;
+    z-index: 9999 !important;
+    /* Ép nằm trên mọi thứ khác */
+    pointer-events: auto !important;
+    /* Luôn luôn nhận sự kiện click */
+    cursor: pointer !important;
+}
+
+/* =========================================
+   HIỆU ỨNG BÌNH TƯỚI NƯỚC CUTE
+   ========================================= */
+.water-can-btn {
+    position: absolute;
+    width: 60px;
+    /* Bạn có thể chỉnh to nhỏ tùy ý */
+    height: auto;
+    z-index: 9999;
+    cursor: pointer;
+    pointer-events: auto;
+
+    transition: filter 0.3s ease;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* ---------------------------------------------------
+   TỌA ĐỘ BÌNH TƯỚI CHO TỪNG Ô ĐẤT
+   --------------------------------------------------- */
+.plot-0 .water-can-btn {
+    bottom: 90%;
+    left: 32%;
+}
+
+.plot-1 .water-can-btn {
+    bottom: 85%;
+    /* Chỉnh lại cho khớp ô giữa */
+    left: 20%;
+}
+
+.plot-2 .water-can-btn {
+    bottom: 95%;
+    /* Chỉnh lại cho khớp ô phải */
+    left: 32%;
+}
+
+.water-can-btn:hover {
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.8)) brightness(1.1);
+}
+
+/* Hiệu ứng lơ lửng nhẹ nhàng gọi mời click khi đang chờ tưới */
+.float-anim {
+    animation: floating 2s ease-in-out infinite;
+}
+
+@keyframes floating {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+/* HIỆU ỨNG LÚC CLICK VÀO: Lùi lại lấy đà rồi nghiêng đổ nước */
+.is-watering {
+    animation: watering-action 1s ease-in-out forwards;
+    pointer-events: none;
+    /* Khóa click khi đang chạy hiệu ứng */
+}
+
+@keyframes watering-action {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    20% {
+        transform: translateY(-15px) translateX(-10px) rotate(-15deg);
+        /* Nhấc lên, lùi ra sau lấy đà */
+    }
+
+    50%,
+    80% {
+        transform: translateY(10px) translateX(10px) rotate(45deg);
+        /* Nghiêng cái vòi xuống đổ nước */
+    }
+
+    100% {
+        transform: translateY(0) rotate(0deg);
+        /* Thu vòi về */
+        opacity: 0;
+        /* Mờ dần đi trước khi biến mất */
+    }
+}
+
+/* =========================================
+   HIỆU ỨNG CHIẾC RÌU THU HOẠCH
+   ========================================= */
+.axe-btn {
+    position: absolute;
+    width: 70px;
+    /* Độ to của rìu */
+    height: auto;
+    z-index: 9999;
+    cursor: pointer;
+    pointer-events: auto;
+
+    transition: filter 0.3s ease;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+
+    /* Tâm xoay đặt ở cán rìu để vung cho thật */
+    transform-origin: bottom left;
+}
+
+/* ---------------------------------------------------
+   TỌA ĐỘ CHIẾC RÌU CHO TỪNG Ô ĐẤT
+   --------------------------------------------------- */
+.plot-0 .axe-btn {
+    bottom: 200%;
+    left: 30%;
+}
+
+.plot-1 .axe-btn {
+    bottom: 150%;
+    /* Chỉnh lại cho khớp ô giữa */
+    left: 25%;
+}
+
+.plot-2 .axe-btn {
+    bottom: 180%;
+    /* Chỉnh lại cho khớp ô phải */
+    left: 35%;
+}
+
+.axe-btn:hover {
+    filter: drop-shadow(0 6px 15px rgba(245, 158, 11, 0.8)) brightness(1.1);
+}
+
+/* HIỂU ỨNG VUNG RÌU CHẶT CÂY */
+.is-chopping {
+    /* Chạy animation 0.4s và lặp lại 2 lần (thành 0.8s) */
+    animation: chopping-action 0.4s ease-in-out 2;
+    pointer-events: none;
+}
+
+@keyframes chopping-action {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    40% {
+        transform: rotate(-45deg);
+        /* Đưa rìu lên và ngả ra sau lấy đà */
+    }
+
+    80% {
+        transform: rotate(60deg);
+        /* Bổ mạnh xuống thân cây (xoay về trước) */
+    }
+
+    100% {
+        transform: rotate(0deg);
+        /* Thu rìu về */
+    }
+}
+
+/* HIỆU ỨNG CÂY RUNG LÊN KHI BỊ CHẶT TRÚNG */
+.tree-shake {
+    animation: tree-shake-anim 0.2s ease-in-out infinite;
+}
+
+@keyframes tree-shake-anim {
+
+    /* Phải giữ lại translateX(-50%) để cây không bị lệch tâm gốc khi rung */
+    0%,
+    100% {
+        transform: translateX(-50%) rotate(0deg);
+    }
+
+    25% {
+        transform: translateX(-52%) rotate(-2deg);
+    }
+
+    75% {
+        transform: translateX(-48%) rotate(2deg);
+    }
+}
+
+/* TÙY CHỈNH THANH CUỘN CHO MENU*/
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(135, 206, 235, 0.5);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(135, 206, 235, 0.8);
+}
+
+/* =========================================
+   HIỆU ỨNG CHIẾC CUỐC DỌN CÂY CHẾT
+   ========================================= */
+.pickaxe-btn {
+    position: absolute;
+    width: 70px;
+    height: auto;
+    z-index: 9999;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: filter 0.3s ease;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+    transform-origin: bottom left;
+    /* Tâm xoay đặt ở đuôi cán cuốc */
+}
+
+/* Căn tọa độ cuốc cho 3 ô đất (giống tọa độ rìu) */
+.plot-0 .pickaxe-btn {
+    bottom: 75%;
+    left: 35%;
+}
+
+.plot-1 .pickaxe-btn {
+    bottom: 65%;
+    left: 15%;
+}
+
+.plot-2 .pickaxe-btn {
+    bottom: 70%;
+    left: 28%;
+}
+
+.pickaxe-btn:hover {
+    filter: drop-shadow(0 6px 15px rgba(255, 255, 255, 0.8)) brightness(1.1);
+}
+
+/* Hiệu ứng bổ cuốc (0.4s lặp 2 lần = 0.8s) */
+.is-digging {
+    animation: digging-action 0.4s ease-in-out 2;
+    pointer-events: none;
+}
+
+@keyframes digging-action {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    40% {
+        transform: rotate(-45deg);
+    }
+
+    /* Đưa cuốc lên lấy đà */
+    80% {
+        transform: rotate(55deg) translateY(10px);
+    }
+
+    /* Bổ mạnh xuống đất */
+    100% {
+        transform: rotate(0deg);
+    }
+}

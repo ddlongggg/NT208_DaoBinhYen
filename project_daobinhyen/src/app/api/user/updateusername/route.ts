@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/app/lib/firebaseAdmin';
+//Phần này để lưu thông tin sau khi khảo sát survey nha mấy bố
 
 type UserUpdateData = {
   username?: string;
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       }
       updateData.lastSurveyType = body.surveyType;
     }
+
 
     await db.collection('users').doc(decodedToken.uid).update(updateData);
     return new NextResponse(null, { status: 204 });
