@@ -36,9 +36,6 @@ export default function TrungTamDao() {
     const [mailTab, setMailTab] = useState<'write' | 'inbox'>('write');
     const [, setShakeCount] = useState(0);
     const [mailContent, setMailContent] = useState('');
-    const [leaves, setLeaves] = useState(0);
-    const [money, setMoney] = useState(0);
-    const [seeds, setSeeds] = useState(0);
     const [isSending, setIsSending] = useState(false);
     const [isTreeHovered, setIsTreeHovered] = useState(false);
     const [isMailboxHovered, setIsMailboxHovered] = useState(false);
@@ -93,22 +90,7 @@ export default function TrungTamDao() {
             }
         };
 
-        const fetchUserData = async () => {
-            try {
-                const res = await fetch('/api/user/getUserInFo');
-                if (res.ok) {
-                    const data = await res.json();
-                    setLeaves(data.leaves || 0);
-                    setMoney(data.money || 0);
-                    setSeeds(data.seeds || 0);
-                }
-            } catch (error) {
-                console.error("Lỗi lấy dữ liệu user:", error);
-            }
-        };
-
         fetchTimeAndSetImage();
-        fetchUserData();
         const interval = setInterval(fetchTimeAndSetImage, 60000);
         return () => clearInterval(interval);
     }, []);
@@ -148,6 +130,7 @@ export default function TrungTamDao() {
         let amount = 0;
 
         try {
+            // 🔥 Lưu thẳng vào Firebase bằng API Route bạn đã tạo trước đó
             const res = await fetch('/api/user/leaves/shake', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
@@ -157,20 +140,28 @@ export default function TrungTamDao() {
             if (res.ok && data.success && data.reward) {
                 type = data.reward.type;
                 amount = data.reward.amount;
+                let itemName = '';
 
+                // Định danh vật phẩm hiển thị trên thông báo
                 if (type === 'leaf') {
-                    setLeaves(prev => prev + amount);
+                    itemName = 'Lá Vàng 🍂';
                 } else if (type === 'coin') {
-                    setMoney(prev => prev + amount);
+                    itemName = 'Xu Vàng 🪙';
                 } else {
-                    setSeeds(prev => prev + amount);
+                    itemName = 'Hạt Giống 🌱';
                 }
 
                 setShakeCount(prev => prev + 1);
                 spawnParticles(type);
+
+                showAlert(`Cây thần thụ vừa rung rinh và đánh rơi ${amount} ${itemName}!\nTa đã cất gọn vào túi đồ cho con rồi nhé.`, 'Thu Hoạch Thần Thụ');
+
+                // 🔥 PHÁT TÍN HIỆU CẬP NHẬT CHO PROFILE BAR TOÀN CỤC NẢY SỐ
+                window.dispatchEvent(new Event('userDataUpdated'));
             }
         } catch (error) {
             console.error('Lỗi khi rung cây:', error);
+            showAlert('Cây thần thụ đang nghỉ ngơi, hãy thử lại sau một lát nhé.', 'Lỗi kết nối');
         } finally {
             setTimeout(() => setIsShaking(false), 500);
         }
@@ -235,7 +226,6 @@ export default function TrungTamDao() {
                     if (res.ok) {
                         setLetters(prev => prev.filter(l => l.id !== mailId));
                         if (selectedLetter?.id === mailId) setSelectedLetter(null);
-                        // Đã loại bỏ hoàn toàn showAlert thông báo thành công tại đây!
                     }
                 } catch (error) {
                     console.error('Lỗi xóa thư:', error);
@@ -338,22 +328,6 @@ export default function TrungTamDao() {
 
                 {/* NÚT CÀI ĐẶT - luôn ở góc phải trên cùng */}
                 <SettingsButton />
-
-                {/* KHU VỰC HIỂN THỊ TÀI SẢN - dịch sang trái để nhường chỗ cho bánh răng */}
-                <div className="absolute top-6 right-20 z-[100] flex gap-3">
-                    <div className="bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
-                        <span className="text-xl">🍂</span>
-                        <span className="text-white font-bold text-sm tracking-wide">{leaves} <span className="text-gray-300 font-normal text-xs">Lá vàng</span></span>
-                    </div>
-                    <div className="bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
-                        <span className="text-xl">🪙</span>
-                        <span className="text-white font-bold text-sm tracking-wide">{money} <span className="text-gray-300 font-normal text-xs">Xu vàng</span></span>
-                    </div>
-                    <div className="bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
-                        <span className="text-xl">🌱</span>
-                        <span className="text-white font-bold text-sm tracking-wide">{seeds} <span className="text-gray-300 font-normal text-xs">Hạt giống</span></span>
-                    </div>
-                </div>
 
                 {/* Cây Thần Thụ */}
                 <div
@@ -536,7 +510,7 @@ export default function TrungTamDao() {
                                                             {new Date(letter.deliver_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                         </p>
                                                     </div>
-                                                    
+
                                                     {!letter.is_read && (
                                                         <span className="absolute right-12 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-400 shrink-0"></span>
                                                     )}
@@ -585,7 +559,6 @@ export default function TrungTamDao() {
                                 {customAlert.message}
                             </p>
 
-                            {/* ĐÃ FIX HOÀN TOÀN CÚ PHÁP ĐOẠN ĐIỀU HƯỚNG NÀY */}
                             {customAlert.type === 'confirm' ? (
                                 <div className="flex gap-3 w-full">
                                     <button

@@ -66,10 +66,24 @@ export default function ProfileBar() {
         setMounted(true);
     }, []);
 
+    // 1. TỰ ĐỘNG ĐỒNG BỘ nếu dữ liệu toàn cục (AuthContext) có thay đổi từ tính năng khác
+    useEffect(() => {
+        if (userDataExtended) {
+            setLocalData(userDataExtended);
+        }
+    }, [userDataExtended]);
+
+    // 2. LẮNG NGHE SỰ KIỆN GỌI API TRỰC TIẾP (Chống cache hoàn toàn)
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const res = await fetch('/api/user/getUserInFo');
+                const timestamp = new Date().getTime();
+                const res = await fetch(`/api/user/getUserInFo?t=${timestamp}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setLocalData(data);
@@ -78,9 +92,17 @@ export default function ProfileBar() {
                 console.error("Lỗi gọi API tại ProfileBar:", error);
             }
         };
-        fetchUserData();
-    }, [pathname]);
 
+        // Gọi lần đầu khi chuyển trang
+        fetchUserData();
+
+        // Lắng nghe tín hiệu từ các tính năng khác (như Rung cây, Mua hàng...)
+        window.addEventListener('userDataUpdated', fetchUserData);
+
+        return () => {
+            window.removeEventListener('userDataUpdated', fetchUserData);
+        };
+    }, [pathname]);
     if (!mounted) return null;
 
     const path = pathname.toLowerCase();
