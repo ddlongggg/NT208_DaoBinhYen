@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/app/lib/firebaseAdmin';
+import { ONBOARDING_COOKIE, ONBOARDING_COOKIE_OPTIONS } from '@/app/lib/onboarding';
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,10 +45,13 @@ export async function POST(req: NextRequest) {
     await userRef.update(updateData);
 
     // 6. Trả về thành công (kèm streak mới để client cập nhật UI)
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       message: 'Cập nhật tiến độ Check-in thành công!', 
       data: { ...updateData, topicStreak: newStreak }
     }, { status: 200 });
+    response.cookies.set(ONBOARDING_COOKIE, 'done', ONBOARDING_COOKIE_OPTIONS);
+
+    return response;
 
   } catch (error) {
     console.error('Lỗi API Daily Check-in:', error);
