@@ -84,6 +84,20 @@ export default function HaiDang() {
         night: '/Lighthouse/LHNight.png'
     };
 
+    const groundFloorBackgrounds = {
+        morning: '/Lighthouse/LHGroundFloorMor.png',
+        afternoon: '/Lighthouse/LHGroundFloorAf.png',
+        night: '/Lighthouse/LHGroundFloorNight.png'
+    };
+
+    const getGroundFloorStage = (stage: string) => {
+        if (stage === 'dawn' || stage === 'morning' || stage === 'noon') return 'morning';
+        if (stage === 'afternoon') return 'afternoon';
+        return 'night';
+    };
+
+    const groundFloorStage = getGroundFloorStage(timeStage);
+
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black text-white">
             <GlobalAudioPlayer floor={floor} />
@@ -92,13 +106,20 @@ export default function HaiDang() {
             {/* Tầng 1: Luôn giữ nguyên, fade out khi lên Tầng 2 */}
             <div
                 className={`absolute inset-0 transition-opacity duration-1000 ease-in-out z-10 ${floor === 1 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                style={{
-                    backgroundImage: `url('/Lighthouse/LHGroundFloor.png')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }}
             >
+                {/* Ground Floor Background Layers for smooth transition */}
+                {Object.entries(groundFloorBackgrounds).map(([stage, src]) => (
+                    <div
+                        key={stage}
+                        className={`absolute inset-0 transition-opacity ease-in-out ${transitionDuration} ${stage === groundFloorStage ? 'opacity-100' : 'opacity-0'}`}
+                        style={{
+                            backgroundImage: `url('${src}')`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                        }}
+                    />
+                ))}
                 {/* --- CÁC VÙNG CLICK CỦA TẦNG 1 --- */}
 
                 {/* 5. Hải đồ tương lai (Nằm bao trọn mặt bàn) */}

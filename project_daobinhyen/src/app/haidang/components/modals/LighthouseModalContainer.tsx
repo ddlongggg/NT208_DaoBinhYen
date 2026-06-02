@@ -86,9 +86,7 @@ export default function LighthouseModalContainer({ isOpen, initialTab = 'hai-do'
             {/* Góc phải (Đóng & Vàng) */}
             <div className="absolute top-4 right-4 z-20 flex items-center gap-4">
               <div className="flex items-center gap-2 bg-[#5C3A21] px-4 py-1.5 rounded-full shadow-lg border-2 border-[#D2B48C]">
-                <div className="w-5 h-5 rounded-full bg-amber-400 border-2 border-yellow-200 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center text-[10px] font-black text-amber-900">
-                  V
-                </div>
+                <span className="text-lg">💰</span>
                 <span className="text-amber-300 font-black tracking-wide">{gold.toLocaleString()}</span>
               </div>
               <button 

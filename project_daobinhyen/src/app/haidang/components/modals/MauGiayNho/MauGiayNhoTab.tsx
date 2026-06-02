@@ -336,7 +336,7 @@ export default function MauGiayNhoTab() {
           <div className="bg-[#FFFBF5] p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border-4 border-[#8B5A2B]/20">
             <h3 className="text-2xl font-bold text-[#5C3A21] mb-2 font-serif">Tuyệt vời!</h3>
             <div className="bg-amber-100 text-amber-700 font-bold px-4 py-2 rounded-lg inline-block mb-4">
-              +{promptLinkedTask.gold} Vàng 💰
+              +{promptLinkedTask.gold} Tiền 💰
             </div>
             <p className="text-[#8B5A2B] mb-6 font-medium">Bạn vừa hoàn thành một bước đệm thuộc về hải trình lớn. Bạn có muốn mở La Bàn để ghi nhận tiến độ cho hải trình lớn ngay bây giờ không?</p>
             <div className="flex gap-3 justify-center">
@@ -362,7 +362,7 @@ export default function MauGiayNhoTab() {
           <div className="bg-[#FFFBF5] p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border-4 border-[#8B5A2B]/20">
             <h3 className="text-2xl font-bold text-[#5C3A21] mb-2 font-serif">Xuất Sắc!</h3>
             <div className="bg-amber-100 text-amber-700 font-bold px-4 py-2 rounded-lg inline-block mb-4">
-              +{successMessage.gold} Vàng 💰
+              +{successMessage.gold} Tiền 💰
             </div>
             <p className="text-[#8B5A2B] mb-6 font-medium">{successMessage.message}</p>
             <button

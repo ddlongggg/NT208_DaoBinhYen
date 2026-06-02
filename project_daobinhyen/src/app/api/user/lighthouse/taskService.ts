@@ -181,7 +181,7 @@ export const getGold = async (userId: string) => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
-      return snap.data()?.gold || 0;
+      return snap.data()?.money || 0;
     }
     return 0;
   } catch (error) {
@@ -193,7 +193,10 @@ export const getGold = async (userId: string) => {
 export const addGold = async (userId: string, amount: number) => {
   try {
     const userRef = doc(db, 'users', userId);
-    await setDoc(userRef, { gold: increment(amount) }, { merge: true });
+    await setDoc(userRef, { money: increment(amount) }, { merge: true });
+    // Trigger global UI updates across the application
+    window.dispatchEvent(new Event('userDataUpdated'));
+    window.dispatchEvent(new Event('GOLD_UPDATED'));
   } catch (error) {
     console.error("Error adding gold: ", error);
   }

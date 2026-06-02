@@ -340,7 +340,7 @@ export default function DongHoTapTrungTab() {
               <div className="flex items-center gap-2 bg-[#5C3A21] px-5 py-2 rounded-full mb-6">
                 <span className="text-white text-sm font-medium">Phần thưởng:</span>
                 <span className="text-amber-400 font-black text-lg">+{rewardAmount}</span>
-                <div className="w-4 h-4 rounded-full bg-amber-400 border border-yellow-200 flex items-center justify-center text-[9px] font-black text-amber-900">V</div>
+                <span className="text-base">💰</span>
               </div>
               <button
                 onClick={() => setShowReward(false)}

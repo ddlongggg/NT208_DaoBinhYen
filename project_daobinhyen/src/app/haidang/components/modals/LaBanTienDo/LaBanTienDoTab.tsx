@@ -480,7 +480,7 @@ export default function LaBanTienDoTab() {
           <div className="bg-[#FFFBF5] p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border-4 border-[#8B5A2B]/20">
             <h3 className="text-2xl font-bold text-[#5C3A21] mb-2">Vĩ đại quá Thuyền trưởng!</h3>
             <div className="bg-amber-100 text-amber-700 font-bold px-6 py-3 rounded-lg inline-block mb-4 text-xl">
-              +{goldRewardNotification} Vàng 💰
+              +{goldRewardNotification} Tiền 💰
             </div>
             <p className="text-[#8B5A2B] mb-6 font-medium">Bạn vừa hoàn thành xuất sắc một hải trình lớn. Hãy tiếp tục giong buồm chinh phục những chân trời mới nhé!</p>
             <div className="flex justify-center">

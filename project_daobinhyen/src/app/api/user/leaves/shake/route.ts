@@ -27,9 +27,9 @@ export async function POST(req: Request) {
       type = 'leaf';
       amount = Math.floor(Math.random() * 3) + 1;
     } else if (rand < 0.90) {
-      // 30% tỉ lệ rơi Xu vàng (từ 5 đến 20 xu)
+      // 30% tỉ lệ rơi Xu vàng (từ 3 đến 10 xu)
       type = 'coin';
-      amount = Math.floor(Math.random() * 16) + 5;
+      amount = Math.floor(Math.random() * 8) + 3;
     } else {
       // 10% tỉ lệ rơi Hạt giống (chỉ 1 hạt cực hiếm)
       type = 'seed';

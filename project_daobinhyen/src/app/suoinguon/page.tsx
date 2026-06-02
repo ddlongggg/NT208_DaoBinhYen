@@ -1,6 +1,7 @@
 // @/haidang/page.tsx
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import './StreamArea.css';
 import { useAuthContext } from '@/app/context/AuthContext';
 
@@ -269,6 +270,21 @@ export default function StreamArea() {
                     </div>
                 </div>
             )}
+
+            {/* Nút thoát ra homepage */}
+            <Link
+                href="/homepage"
+                className="absolute cursor-pointer group z-50 flex items-center justify-center font-sans"
+                style={{ top: '90%', left: '90%', width: '12%', height: '10%' }}
+            >
+                <div className="absolute pointer-events-none animate-pulse">
+                    <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+                </div>
+
+                <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+                    <h3 className="text-white font-bold text-sm whitespace-nowrap">Ra khỏi suối nguồn</h3>
+                </div>
+            </Link>
         </div>
     );
 }
