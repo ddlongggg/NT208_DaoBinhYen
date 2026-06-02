@@ -14,6 +14,24 @@ const publicPrefixes = [
     '/_next',
 ];
 
+const appRoutes = new Set([
+    '/',
+    '/daily-checkin',
+    '/forgot-password',
+    '/haidang',
+    '/homepage',
+    '/honuoc',
+    '/login',
+    '/nhago',
+    '/register',
+    '/reset-password',
+    '/suoinguon',
+    '/survey',
+    '/thanthu',
+    '/thucung',
+    '/vuonhoa',
+]);
+
 function isPublicRoute(pathname: string) {
     if (publicRoutes.has(pathname)) return true;
     return publicPrefixes.some((prefix) => pathname.startsWith(prefix));
@@ -49,6 +67,10 @@ export function proxy(request: NextRequest) {
             if (!isDailyPage && !isForcedSurvey) {
                 return NextResponse.redirect(new URL('/daily-checkin', request.url));
             }
+        }
+
+        if (!appRoutes.has(pathname)) {
+            return NextResponse.redirect(new URL('/homepage', request.url));
         }
 
         return NextResponse.next();

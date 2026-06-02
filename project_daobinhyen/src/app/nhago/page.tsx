@@ -45,12 +45,12 @@ const WoodHousePage: React.FC = () => {
     const handler = (e: Event) => {
       const { volume: globalVol, muted: globalMuted } = (e as CustomEvent).detail;
       if (audioRef.current) {
-        audioRef.current.volume = globalMuted ? 0 : volume * globalVol;
+        audioRef.current.volume = globalMuted ? 0 : globalVol;
       }
     };
     window.addEventListener('app-volume-change', handler);
     return () => window.removeEventListener('app-volume-change', handler);
-  }, [volume]);
+  }, []);
 
   // Hàm gọi tìm nhạc (Trong database)
   const handleSearch = () => {
@@ -140,7 +140,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       setCurrentTrackUrl(audio.src);
     }
 
-    audio.volume = volume * getGlobalVol();
+    audio.volume = getGlobalVol();
     setMusicType(type);
     await audio.play();
     setIsPlaying(true);
@@ -391,22 +391,6 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       </button>
 
         {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 text-white">
-          <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Vol</span>
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.01" 
-            value={volume} 
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              setVolume(v);
-              if(audioRef.current) audioRef.current.volume = v * getGlobalVol();
-            }} 
-            className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" 
-          />
-        </div>
 
         {/* Status Bar - Đẩy qua góc dưới bên phải, tăng kích thước để che logo Gemini */}
         <div className="absolute bottom-2 right-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">

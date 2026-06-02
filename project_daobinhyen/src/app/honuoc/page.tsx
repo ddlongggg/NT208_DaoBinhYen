@@ -17,6 +17,7 @@ const HoNuocPage = () => {
   const [status, setStatus] = useState<'idle' | 'preparing' | 'watching' | 'healing'>('idle');
   //Quản lí nhạc nền
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const volumeRef = useRef(0.5);
   //Nút âm lượng
   const [volume, setVolume] = useState(0.5); // Mặc định 50%
   //Hiệu ứng sóng nước
@@ -57,10 +58,16 @@ const HoNuocPage = () => {
 
   //Lấy ảnh
   const bgImages: Record<TimeSession, string> = {
-    night: '/honuoc/night.jpg',
-    sunrise: '/honuoc/sunrise.jpg',
-    midday: '/honuoc/midday.jpg',
-    afternoon: '/honuoc/afternoon.jpg'
+    night: '/honuoc/night.png',
+    sunrise: '/honuoc/dawn.png',
+    midday: '/honuoc/midday.png',
+    afternoon: '/honuoc/afternoon.png'
+  };
+
+  const getAppVolume = () => {
+    if (typeof window === 'undefined') return 0.5;
+    if (localStorage.getItem('app_muted') === 'true') return 0;
+    return Number(localStorage.getItem('app_volume') ?? '70') / 100;
   };
 
   const handleWaterAreaClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -73,7 +80,7 @@ const HoNuocPage = () => {
     try {
       const clickAudio = new Audio('/audio/water-click.m4a');
       const audioClone = clickAudio.cloneNode(true) as HTMLAudioElement;
-      audioClone.volume = volume * 0.8;
+      audioClone.volume = volumeRef.current * 0.8;
       const playPromise = audioClone.play();
 
       if (playPromise !== undefined) {
@@ -251,11 +258,33 @@ const HoNuocPage = () => {
 
 
   useEffect(() => {
+    volumeRef.current = volume;
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  useEffect(() => {
     setIsClient(true);
+    const initialVolume = getAppVolume();
+    setVolume(initialVolume);
+
     const audio = new Audio('/audio/healing-bg.m4a');
     audio.loop = true;
-    audio.volume = volume;
+    audio.volume = initialVolume;
     audioRef.current = audio;
+
+    const handleGlobalVolumeChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ volume: number; muted: boolean }>).detail;
+      const nextVolume = detail?.muted ? 0 : detail?.volume ?? getAppVolume();
+      setVolume(nextVolume);
+    };
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'app_volume' || event.key === 'app_muted') {
+        setVolume(getAppVolume());
+      }
+    };
 
     const playAudio = () => {
       audio.play().then(() => {
@@ -267,6 +296,8 @@ const HoNuocPage = () => {
     };
 
     playAudio();
+    window.addEventListener('app-volume-change', handleGlobalVolumeChange);
+    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('click', playAudio);
     window.addEventListener('touchstart', playAudio);
 
@@ -300,6 +331,8 @@ const HoNuocPage = () => {
 
     return () => {
       if (timer) clearInterval(timer);
+      window.removeEventListener('app-volume-change', handleGlobalVolumeChange);
+      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('click', playAudio);
       window.removeEventListener('touchstart', playAudio);
       if (audioRef.current) {
@@ -529,23 +562,6 @@ const HoNuocPage = () => {
       )}
 
       {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 text-white">
-        <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Vol</span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={(e) => {
-            const v = parseFloat(e.target.value);
-            setVolume(v);
-            if (audioRef.current) audioRef.current.volume = v;
-          }}
-          className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white"
-        />
-      </div>
-
       <button
         onClick={() => router.push('/homepage')}
         className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full border border-white/20 transition-all group"

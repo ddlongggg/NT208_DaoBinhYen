@@ -152,13 +152,13 @@ export default function DynamicIsland() {
 
     // Dữ liệu bổ sung cho các bảng hiện lên
     const zonesInfo: Record<string, any> = {
-        "/haidang": { title: "Tháp Canh Minh Triết", desc: "Nơi lưu giữ những bí mật cổ xưa của hòn đảo.", img: "HaiDangg.png" },
-        "/thanthu": { title: "Cây Thần Thụ", desc: "Trái tim của đảo, nơi nguồn năng lượng sống dồi dào.", img: "TrungTamDao.png" },
-        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/wooden-house/midday.png" },
-        "/suoinguon": { title: "Suối Nguồn Cảm Xúc", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "/backgroundsuoinguon/SuoiNguonCamXuc12AM.png" },
-        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/vuonhoa/VuonHoa.png" },
+        "/haidang": { title: "Tháp Canh Minh Triết", desc: "Tháp canh minh triết là nơi giúp bạn lấy lại sự tập trung, nhìn rõ hướng đi và thả mình vào những âm thanh dịu nhẹ. Ở tầng dưới, bạn có thể ghi lại suy nghĩ, xem tiến độ, để lại ghi chú nhỏ và nhìn lại hành trình của mình.Tầng trên có đồng hồ tập trung và radio chữa lành, phù hợp khi bạn muốn học bài, làm việc hoặc nghỉ ngơi trong một không gian yên tĩnh.", img: "HaiDangg.png" },
+        "/thanthu": { title: "Cây Thần Thụ", desc: "Cây Thần Thụ là trung tâm của đảo, nơi bạn có thể nhận những phần thưởng nhỏ như lá cây, vàng hoặc hạt giống để tiếp tục hành trình của mình. Tại đây còn có hòm thư tương lai, cho phép bạn viết một lá thư gửi đến chính mình của ngày mai. Đó có thể là một lời nhắn nhủ, một câu động viên hoặc một suy nghĩ quan trọng muốn giữ lại.", img: "TrungTamDao.png" },
+        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Nhà Gỗ là góc nghỉ chân ấm áp dành cho âm nhạc và sự thư giãn. Bạn có thể bật Lo-fi, nghe đài FM, tìm bài nhạc yêu thích hoặc chuyển qua các kênh radio khác nhau. Khi cần nghỉ ngơi sâu hơn, chế độ nằm võng sẽ làm không gian dịu tối lại, giúp bạn tạm gác mọi thứ và thả lỏng sau một ngày dài..", img: "/wooden-house/midday.png" },
+        "/suoinguon": { title: "Suối Nguồn Cảm Xúc", desc: "Suối Nguồn là nơi bạn có thể gửi gắm những điều đang giữ trong lòng. Bạn có thể thả thuyền tâm sự, mở nhật ký, nhận lời chúc hoặc trò chuyện để chia sẻ nhiều hơn.Những bong bóng chữa lành thỉnh thoảng sẽ xuất hiện, mang đến các video ngắn như một rạp chiếu phim nhỏ giữa dòng suối. Đây là nơi phù hợp khi bạn cần được lắng nghe và vỗ về.", img: "/backgroundsuoinguon/SuoiNguonCamXuc12AM.png" },
+        "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Vườn Tâm Hồn là nơi bạn gieo hạt, tưới nước và chăm sóc cây lớn lên từng ngày. Mỗi loài cây có thời gian phát triển, giá trị và độ hiếm riêng. Khi cây trưởng thành, bạn có thể thu hoạch tinh hoa để đổi vật phẩm hoặc mở khóa thú cưng hiếm. Khu vườn nhắc bạn rằng những điều tốt đẹp thường cần thời gian và sự chăm sóc đều đặn.", img: "/vuonhoa/VuonHoa.png" },
         "/vachda": { title: "Vách Đá Tầm Nhìn", desc: "Nơi cao nhất để phóng tầm mắt ra đại dương.", img: "/island/Island10AM.jpg" },
-        "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Mặt hồ phẳng lặng giúp bạn nhìn thấu chính mình.", img: "HoNuoc.png" }
+        "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Hồ Nước là nơi bạn dừng lại để nhìn vào cảm xúc hiện tại của mình. Bạn có thể chạm vào mặt nước để tạo gợn sóng và âm thanh nhẹ nhàng.Điểm đặc biệt ở đây là Gương Thần Tâm Hồn, có thể nhận diện biểu cảm qua camera và gửi đến bạn một lời thì thầm phù hợp. Nếu không dùng camera, hồ vẫn sẽ dành cho bạn một lời nhắn chữa lành nhẹ nhàng..", img: "HoNuoc.png" }
     };
 
     const handleZoneClick = (e: React.MouseEvent, path: string) => {
@@ -346,16 +346,16 @@ export default function DynamicIsland() {
                     {/* Lớp nền overlay mờ nhẹ để vẫn thấy đảo */}
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => setSelectedZone(null)} />
 
-                    <div className="relative bg-black/60 backdrop-blur-2xl border border-white/20 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto md:h-[350px] animate-in zoom-in-95 duration-300 mx-4">
-                        <div className="w-full md:w-1/2 h-48 md:h-full relative overflow-hidden">
+                    <div className="relative bg-black/60 backdrop-blur-2xl border border-white/20 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto md:h-[440px] animate-in zoom-in-95 duration-300 mx-4">
+                        <div className="w-full md:w-[44%] h-52 md:h-full relative overflow-hidden">
                             <img src={selectedZone.img} className="w-full h-full object-cover" alt={selectedZone.title} />
                             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-transparent to-transparent" />
                         </div>
-                        <div className="w-full md:w-1/2 p-8 flex flex-col justify-between">
-                            <div>
-                                <h2 className="text-2xl font-bold text-white mb-2">{selectedZone.title}</h2>
+                        <div className="w-full md:w-[56%] p-7 md:p-10 flex flex-col justify-between min-h-0">
+                            <div className="min-h-0">
+                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{selectedZone.title}</h2>
                                 <div className="w-10 h-1 bg-pink-500 rounded-full mb-4" />
-                                <p className="text-gray-300 text-sm italic leading-relaxed">"{selectedZone.desc}"</p>
+                                <p className="text-gray-300 text-sm md:text-[15px] italic leading-relaxed max-h-48 md:max-h-60 overflow-y-auto pr-2">"{selectedZone.desc}"</p>
                             </div>
                             <div className="flex gap-3 mt-6">
                                 <button onClick={() => setSelectedZone(null)} className="flex-1 py-3 rounded-2xl border border-white/10 text-gray-400 text-[10px] font-black uppercase hover:bg-white/10 transition-all">Quay lại</button>
