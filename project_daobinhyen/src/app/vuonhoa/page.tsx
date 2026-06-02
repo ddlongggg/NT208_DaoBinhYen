@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuthContext } from '@/app/context/AuthContext';
 import './KhuVuonChuaLanh.css';
 import { Quicksand } from 'next/font/google';
@@ -128,6 +129,11 @@ export default function Page() {
 
     //State để bật/tắt Bảng Hướng Dẫn
     const [showGuide, setShowGuide] = useState(true);
+    const [alertPopup, setAlertPopup] = useState<{ isOpen: boolean; message: string; title?: string } | null>(null);
+
+    const showAlert = (message: string, title: string = "Thông báo") => {
+        setAlertPopup({ isOpen: true, message, title });
+    };
 
     // Tách biệt rõ ràng: 'firebaseUser' (đăng nhập) và 'gameUserData' (dữ liệu hạt giống)
     const { user: firebaseUser, userDataExtended: gameUserData, setUserDataExtended, plots, setPlots, refreshGameData } = useAuthContext();
@@ -142,14 +148,11 @@ export default function Page() {
     // 3. ĐỒNG BỘ SỐ HẠT GIỐNG TỪ CONTEXT VÀO STATE CỦA TRANG ĐỂ HIỂN THỊ
     useEffect(() => {
         if (gameUserData) {
-            const seeds = gameUserData.seeds !== undefined ? gameUserData.seeds : gameUserData.data?.seeds;
-            setSeedCount(seeds || 0);
-
-            const money = gameUserData.money !== undefined ? gameUserData.money : gameUserData.data?.money;
-            setMoneyCount(money || 0);
+            const dataObj = gameUserData.data || gameUserData;
+            setSeedCount(dataObj.seeds || 0);
+            setMoneyCount(dataObj.money || 0);
 
             // 🔥 ĐỒNG BỘ TINH HOA TỪ FIREBASE VÀO TÚI ĐỒ TRÊN WEB
-            const dataObj = gameUserData.data || gameUserData;
             setEssences({
                 lam: dataObj.essence_lam || 0,
                 tim: dataObj.essence_tim || 0,
@@ -259,12 +262,12 @@ export default function Page() {
 
     const handlePlantTree = (tree: TreeOption, plotId: number) => {
         if (!firebaseUser) {
-            alert("Bạn cần đăng nhập để có thể gieo mầm nhé!");
+            showAlert("Bạn cần đăng nhập để có thể gieo mầm nhé!", "Yêu cầu đăng nhập");
             return;
         }
 
         if (seedCount < tree.seedCost) {
-            alert(`Không đủ hạt giống! Bạn cần thêm ${tree.seedCost - seedCount} hạt giống.`);
+            showAlert(`Không đủ hạt giống! Bạn cần thêm ${tree.seedCost - seedCount} hạt giống.`, "Không đủ hạt giống");
             return;
         }
 
@@ -323,7 +326,7 @@ export default function Page() {
 
             // 1. KIỂM TRA TIỀN TRƯỚC KHI CHO TƯỚI NƯỚC
             if (moneyCount < WATER_COST) {
-                alert(`Ối! Bạn không đủ Vàng để tưới nước. Cần ít nhất ${WATER_COST} 💰.`);
+                showAlert(`Ối! Bạn không đủ Tiền để tưới nước. Cần ít nhất ${WATER_COST} 💰.`, "Thiếu Tiền");
                 return; // Dừng lại luôn, không chạy animation
             }
 
@@ -882,6 +885,49 @@ export default function Page() {
                         )}
                     </React.Fragment>
                 ))}
+
+                {/* Nút thoát ra homepage */}
+                <Link
+                    href="/homepage"
+                    className="absolute cursor-pointer group z-[999] flex items-center justify-center font-sans"
+                    style={{ top: '90%', left: '90%', width: '12%', height: '10%' }}
+                >
+                    <div className="absolute pointer-events-none animate-pulse">
+                        <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+                    </div>
+
+                    <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+                        <h3 className="text-white font-bold text-sm whitespace-nowrap">Ra khỏi vườn tâm hồn</h3>
+                    </div>
+                </Link>
+
+
+                {alertPopup && alertPopup.isOpen && (
+                    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] border-2 border-emerald-500/30 w-[90vw] max-w-[400px] rounded-[2rem] shadow-[0_0_50px_rgba(16,185,129,0.15)] p-6 flex flex-col items-center text-center">
+
+                            {/* Icon cảnh báo */}
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20 shadow-inner">
+                                <span className="text-3xl">⚠️</span>
+                            </div>
+
+                            <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-2 tracking-wide uppercase">
+                                {alertPopup.title || "Thông báo"}
+                            </h3>
+
+                            <p className="text-gray-300 text-sm font-medium mb-6 leading-relaxed">
+                                {alertPopup.message}
+                            </p>
+
+                            <button
+                                onClick={() => setAlertPopup(null)}
+                                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-black uppercase tracking-wider hover:scale-102 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-200 cursor-pointer"
+                            >
+                                Đồng ý
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

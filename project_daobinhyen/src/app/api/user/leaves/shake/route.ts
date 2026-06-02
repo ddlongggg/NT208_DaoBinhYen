@@ -18,7 +18,7 @@ function rollReward() {
     amount = Math.floor(Math.random() * 3) + 1;
   } else if (rand < 0.90) {
     type = "coin";
-    amount = Math.floor(Math.random() * 16) + 5;
+    amount = Math.floor(Math.random() * 8) + 3;
   } else {
     type = "seed";
     amount = 1;

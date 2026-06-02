@@ -189,16 +189,12 @@ const LoginPage: React.FC = () => {
 
                     <button
                         type="button"
-                        onClick={() => handleSocialLogin('facebook')}
                         className={styles.socialButton}
-                        disabled={!!socialLoading || loading}
+                        disabled={true}
+                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
                     >
-                        {socialLoading === 'facebook' ? (
-                            <Loader2 className={styles.spinner} size={18} />
-                        ) : (
-                            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" />
-                        )}
-                        <span>{socialLoading === 'facebook' ? 'Đang xử lý...' : 'Facebook'}</span>
+                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" />
+                        <span>Coming soon</span>
                     </button>
                 </div>
 

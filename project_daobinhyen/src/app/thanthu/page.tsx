@@ -1,7 +1,8 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import SettingsButton from '@/app/components/SettingsButton';
 
 interface Letter {
     id: string;
@@ -331,17 +332,20 @@ export default function TrungTamDao() {
             >
                 <div className="absolute inset-0 bg-black/10 z-0 pointer-events-none"></div>
 
-                {/* NÚT BACK */}
-                <div className="absolute top-6 left-6 z-[100]">
-                    <button
-                        onClick={() => window.location.href = '/homepage'}
-                        className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg cursor-pointer hover:bg-white/20 transition-all duration-300 flex items-center justify-center group"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                    </button>
-                </div>
+                {/* Nút thoát ra homepage */}
+                <Link
+                    href="/homepage"
+                    className="absolute cursor-pointer group z-[100] flex items-center justify-center font-sans"
+                    style={{ top: '90%', left: '90%', width: '12%', height: '10%' }}
+                >
+                    <div className="absolute pointer-events-none animate-pulse">
+                        <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+                    </div>
+
+                    <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+                        <h3 className="text-white font-bold text-sm whitespace-nowrap">Rời khỏi cây thần thụ</h3>
+                    </div>
+                </Link>
 
                 {/* NÚT CÀI ĐẶT - luôn ở góc phải trên cùng */}
                 {/* Cây Thần Thụ */}

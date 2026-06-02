@@ -168,7 +168,7 @@ export default function DynamicIsland() {
     // -------------------------------------------------------
 
     const getBackgroundImage = (hour: number) => {
-        if (hour >= 0 && hour < 2) return '/island/Island0AM.jpg';
+        if (hour >= 0 && hour < 2) return '/island/Island0PM.jpg';
         if (hour >= 2 && hour < 4) return '/island/Island2AM.jpg';
         if (hour >= 4 && hour < 6) return '/island/Island4AM.jpg';
         if (hour >= 6 && hour < 8) return '/island/Island6AM.jpg';
@@ -245,7 +245,7 @@ export default function DynamicIsland() {
                     style={{ top: '35%', left: '65%', width: '4%', height: '17%' }}
                 >
                     <div className="absolute w-48 md:w-56 p-4 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none flex flex-col items-center text-center">
-                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Tháp Canh Minh Triết</h3>
+                        <h3 className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-md">Hải Đăng</h3>
                         <div className="w-8 h-[2px] bg-white mb-2 rounded-full shadow-[0_0_5px_white]"></div>
                         <p className="text-gray-100 text-xs md:text-sm font-medium drop-shadow-md italic">Bấm để xem chi tiết</p>
                     </div>
@@ -359,7 +359,11 @@ export default function DynamicIsland() {
                             </div>
                             <div className="flex gap-3 mt-6">
                                 <button onClick={() => setSelectedZone(null)} className="flex-1 py-3 rounded-2xl border border-white/10 text-gray-400 text-[10px] font-black uppercase hover:bg-white/10 transition-all">Quay lại</button>
-                                <button onClick={() => router.push(selectedZone.path)} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-700 text-white text-[10px] font-black uppercase shadow-lg shadow-pink-500/20 hover:opacity-90 transition-opacity">Đi Đến</button>
+                                {selectedZone.path === '/vachda' ? (
+                                    <button disabled={true} className="flex-1 py-3 rounded-2xl bg-gray-600 text-gray-400 text-[10px] font-black uppercase cursor-not-allowed opacity-50">Coming soon</button>
+                                ) : (
+                                    <button onClick={() => router.push(selectedZone.path)} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-700 text-white text-[10px] font-black uppercase shadow-lg shadow-pink-500/20 hover:opacity-90 transition-opacity">Đi Đến</button>
+                                )}
                             </div>
                         </div>
                     </div>

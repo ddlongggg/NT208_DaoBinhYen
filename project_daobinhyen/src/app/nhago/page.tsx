@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from '@/app/lib/firebase'; 
 
@@ -333,14 +334,20 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       />
 
       
-      {/* --- NÚT GO BACK --- */}
-      <button 
-        onClick={() => router.push('/homepage')} // Hoặc router.push('/homepage') nếu muốn chỉ định đích
-        className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full border border-white/20 transition-all group"
+      {/* Nút thoát ra homepage */}
+      <Link
+        href="/homepage"
+        className="absolute cursor-pointer group z-50 flex items-center justify-center font-sans"
+        style={{ top: '90%', left: '90%', width: '12%', height: '10%' }}
       >
-        <span className="group-hover:-translate-x-1 transition-transform">←</span>
-        <span className="font-medium text-sm">Rời khỏi nhà gỗ</span>
-      </button>
+        <div className="absolute pointer-events-none animate-pulse">
+          <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+        </div>
+
+        <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+          <h3 className="text-white font-bold text-sm whitespace-nowrap">Ra khỏi nhà gỗ</h3>
+        </div>
+      </Link>
       {/* Overlay làm tối khi nhấn vào võng */}
       <div 
         className={`fixed inset-0 bg-[#000514]/85 z-10 pointer-events-none transition-opacity duration-[3000ms] ${
@@ -392,8 +399,8 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
 
         {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
 
-        {/* Status Bar - Đẩy qua góc dưới bên phải, tăng kích thước để che logo Gemini */}
-        <div className="absolute bottom-2 right-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
+        {/* Status Bar - Đẩy qua góc dưới bên trái, tăng kích thước để che logo Gemini */}
+        <div className="absolute bottom-2 left-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
           <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
             {session} mode
           </p>

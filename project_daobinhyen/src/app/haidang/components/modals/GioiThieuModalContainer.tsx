@@ -246,7 +246,7 @@ export default function GioiThieuModalContainer({ isOpen, onClose }: GioiThieuMo
                           <h4 className="font-extrabold text-[#5C3A21] text-sm md:text-base">Đồng hồ tập trung (Pomodoro)</h4>
                         </div>
                         <p className="text-xs md:text-sm text-[#5C3A21]/95 leading-relaxed pl-12 text-justify">
-                          Tọa lạc tại đỉnh tháp vọng tầng 2, chiếc đồng hồ cát thần kỳ sẽ đếm ngược thời gian giúp bạn thiết lập kỷ luật Pomodoro sâu sắc. Điều đặc biệt: **Cứ mỗi giây tập trung hoàn thành, bạn sẽ nhận được 1 đồng vàng** dùng để xây dựng hòn đảo mơ ước của mình!
+                          Tọa lạc tại đỉnh tháp vọng tầng 2, chiếc đồng hồ cát thần kỳ sẽ đếm ngược thời gian giúp bạn thiết lập kỷ luật Pomodoro sâu sắc. Điều đặc biệt: **Cứ mỗi phút tập trung hoàn thành, bạn sẽ nhận được 1 đồng tiền 💰** dùng để xây dựng hòn đảo mơ ước của mình!
                         </p>
                       </div>
 

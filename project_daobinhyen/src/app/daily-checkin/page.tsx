@@ -17,6 +17,7 @@ interface UserData {
   survey_study: number | null;
   survey_emotion: number | null;
   survey_sleep: number | null;
+  seeds: number;
 }
 
 interface Scene {
@@ -60,11 +61,15 @@ export default function DailyCheckinPage() {
   // 🔥 STATE QUẢN LÝ XU HƯỚNG TÂM LÝ (TỐT LÊN HAY TỆ ĐI) 🔥
   const [trend, setTrend] = useState<'better' | 'worse' | null>(null);
 
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  const [seedReward, setSeedReward] = useState<number | null>(null);
+
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+  const didFetch = useRef(false);
 
   const getGlobalVol = (): number => {
     if (typeof window === 'undefined') return 1;
@@ -74,11 +79,37 @@ export default function DailyCheckinPage() {
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
+
     const fetchUserData = async () => {
       try {
         const res = await fetch('/api/user/getUserInFo');
         if (!res.ok) { router.replace('/login'); return; }
         const data = await res.json();
+
+        // Calculate daily check-in branch once here!
+        const rand = Math.random();
+        let branch = 'normal';
+        let rewardAmt = null;
+
+        const now = new Date();
+        const lastLogin = new Date(data.lastLoginDate);
+        const diffDays = Math.ceil(Math.abs(now.getTime() - lastLogin.getTime()) / 86400000);
+
+        if (diffDays >= 180) {
+          branch = 'long_absence';
+        } else if (rand < 0.15) {
+          branch = 'seeds_gift';
+          rewardAmt = Math.floor(Math.random() * 3) + 3; // 3 to 5 seeds
+        } else if ((data.topicStreak || 0) >= 5 && (data.lastSurveyScore || 0) <= 45) {
+          branch = 'stuck';
+        } else if (diffDays >= 30) {
+          branch = 'medium_absence';
+        } else if (data.lastSurveyType === 'emotion' && (data.lastSurveyScore || 0) <= 40 && Math.random() < 0.5) {
+          branch = 'bad_emotion';
+        }
+
         setUserData({
           userId: data.userId,
           userName: data.username || 'Bạn',
@@ -90,7 +121,11 @@ export default function DailyCheckinPage() {
           survey_study: data.survey_study ?? null,
           survey_emotion: data.survey_emotion ?? null,
           survey_sleep: data.survey_sleep ?? null,
+          seeds: data.seeds ?? 0,
         });
+
+        setSelectedBranch(branch);
+        setSeedReward(rewardAmt);
         setIsLoading(false);
       } catch {
         router.replace('/login');
@@ -101,14 +136,11 @@ export default function DailyCheckinPage() {
 
   // --- 2. BUILD SCENARIO ---
   const scenario = useMemo<Scene[]>(() => {
-    if (!userData) return [];
+    if (!userData || !selectedBranch) return [];
 
     const now = new Date();
-    const lastLogin = new Date(userData.lastLoginDate);
-    const diffDays = Math.ceil(Math.abs(now.getTime() - lastLogin.getTime()) / 86400000);
     const currentHour = now.getHours();
     const name = userData.userName;
-    const randomChance = Math.random();
 
     const mkCheckin = (id: string, text: string): Scene => ({
       id, speaker: SPEAKER, text, type: 'options', options: CHECKIN_OPTIONS
@@ -124,28 +156,29 @@ export default function DailyCheckinPage() {
     let conversationScenes: Scene[] = [];
 
     // Nhánh: Lặn mất tăm 6 tháng -> Bắt làm lại Full Khảo sát
-    if (diffDays >= 180) {
+    if (selectedBranch === 'long_absence') {
       conversationScenes = [
         { id: 's1', speaker: SPEAKER, text: `Ô hô hô... Gió biển hôm nay thổi về một người quen cũ. ${name} đấy ư? Chà, phải hơn nửa năm rồi cái thân già này mới thấy con.`, next: 's2' },
         { id: 's2', speaker: SPEAKER, text: `Nửa năm ngoài kia chắc có nhiều đổi thay. Nán lại một chút, làm lại bài khảo sát để ta xem dạo này tâm hồn con mang màu sắc gì nhé...`, type: 'next_button', next_text: 'Làm bài khảo sát', action: 'force_full_survey' }
       ];
     }
     // Nhánh: Xác suất 15% tặng hạt giống
-    else if (randomChance < 0.15) {
+    else if (selectedBranch === 'seeds_gift') {
       conversationScenes = [
-        { id: 's1', speaker: SPEAKER, text: `A ${name} tới đúng lúc lắm! Nay ta đi dạo nhặt được hạt giống lạ. Tí nữa con rảnh thì mang ra Vườn hoa ươm thử nhé!`, next: 's2' },
+        { id: 's1', speaker: SPEAKER, text: `A ${name} tới đúng lúc lắm! Nay ta đi dạo nhặt được ${seedReward} hạt giống lạ. Ta gửi tặng con làm quà gặp mặt nhé!`, next: 's1_claim_seeds' },
+        { id: 's1_claim_seeds', speaker: SPEAKER, text: `(Bạn nhận được ${seedReward} hạt giống 🌱)`, next: 's2' },
         mkCheckin('s2', 'Còn bây giờ, cơn gió nào đưa con đến Đảo Bình Yên hôm nay?')
       ];
     }
     // Nhánh: Bị kẹt trong 1 vấn đề (Streak >= 5 ngày) mà điểm vẫn lẹt đẹt
-    else if (userData.topicStreak >= 5 && userData.lastScore <= 45) {
+    else if (selectedBranch === 'stuck') {
       conversationScenes = [
         { id: 's1', speaker: SPEAKER, text: `Này ${name}... Ta thấy con loanh quanh với những mệt mỏi này hơi lâu rồi đấy. Trốn tránh mãi không phải là cách đâu.`, next: 's2' },
         mkCheckin('s2', 'Đừng cố gồng gánh tất cả cùng lúc. Hôm nay con muốn ưu tiên giải quyết điều gì trước?')
       ];
     }
     // Nhánh: Bỏ đi 1 tháng mới về
-    else if (diffDays >= 30) {
+    else if (selectedBranch === 'medium_absence') {
       const text = userData.lastScore <= 45
         ? `Cũng hơn tháng rồi ta mới gặp con. Bão giông ngoài kia đã qua chưa con? Không biết dạo này con có ổn không?`
         : `Chào người bạn cũ! Bẵng đi một dạo, không biết con có còn giữ được năng lượng rạng rỡ như lần trước đến đây không?`;
@@ -155,7 +188,7 @@ export default function DailyCheckinPage() {
       ];
     }
     // Nhánh: Cảm xúc đang tệ (< 40)
-    else if (userData.lastSurveyType === 'emotion' && userData.lastScore <= 40 && randomChance < 0.5) {
+    else if (selectedBranch === 'bad_emotion') {
       conversationScenes = [
         { id: 's1', speaker: SPEAKER, text: `Ta biết dạo này con mang nhiều tâm sự. Ta thấy ở Đảo Chung cũng đang có nhiều người buồn giống con đấy.`, next: 's2' },
         mkCheckin('s2', 'Con muốn ra Suối nguồn tìm người trò chuyện hay muốn làm gì khác hôm nay?')
@@ -175,10 +208,17 @@ export default function DailyCheckinPage() {
 
     // 🔥 2. GỘP CẢ CÂU CHÀO HỎI VÀ CÂU KẾT QUẢ VÀO CHUNG 1 KỊCH BẢN 🔥
     return [...conversationScenes, ...resultScenes];
-  }, [userData]);
+  }, [userData, selectedBranch, seedReward]);
   useEffect(() => {
-    if (scenario.length > 0 && !currentScene) {
-      setCurrentScene(scenario[0]);
+    if (scenario.length > 0) {
+      if (!currentScene) {
+        setCurrentScene(scenario[0]);
+      } else {
+        const matching = scenario.find(s => s.id === currentScene.id);
+        if (matching && matching !== currentScene) {
+          setCurrentScene(matching);
+        }
+      }
     }
   }, [scenario, currentScene]);
 
@@ -225,6 +265,26 @@ export default function DailyCheckinPage() {
       clickSoundRef.current.currentTime = 0;
       clickSoundRef.current.volume = 1 * getGlobalVol();
       clickSoundRef.current.play().catch(() => { });
+    }
+  };
+
+  const awardSeeds = async () => {
+    if (!userData || !seedReward) return;
+
+    const currentSeeds = userData.seeds ?? 0;
+    const newSeeds = currentSeeds + seedReward;
+
+    setUserData(prev => prev ? { ...prev, seeds: newSeeds } : null);
+
+    try {
+      await fetch('/api/user/updateSeeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userData.userId, seeds: newSeeds })
+      });
+      window.dispatchEvent(new Event('userDataUpdated'));
+    } catch (error) {
+      console.error("Lỗi cộng hạt giống checkin:", error);
     }
   };
 
@@ -381,6 +441,9 @@ export default function DailyCheckinPage() {
 
   const handleBoxClick = () => {
     if (!isTyping && currentScene && !currentScene.type && currentScene.next) {
+      if (currentScene.id === 's1_claim_seeds') {
+        awardSeeds();
+      }
       handleNext(currentScene.next);
     }
   };
