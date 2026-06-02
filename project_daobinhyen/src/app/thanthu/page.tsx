@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SettingsButton from '@/app/components/SettingsButton';
 
@@ -31,6 +32,8 @@ interface CustomAlert {
 }
 
 export default function TrungTamDao() {
+    const searchParams = useSearchParams();
+    const mailboxMode = searchParams.get('mailbox');
     const [bgImage, setBgImage] = useState<string>('');
     const [isMailboxModalOpen, setIsMailboxModalOpen] = useState(false);
     const [mailTab, setMailTab] = useState<'write' | 'inbox'>('write');
@@ -137,6 +140,12 @@ export default function TrungTamDao() {
             });
             const data = await res.json();
 
+            if (res.status === 429) {
+                const seconds = Math.ceil((data.retryAfterMs || 1000) / 1000);
+                showAlert(`Cây thần thụ cần nghỉ thêm ${seconds} giây nữa rồi hãy rung tiếp nhé.`, 'Thu Hoạch Thần Thụ');
+                return;
+            }
+
             if (res.ok && data.success && data.reward) {
                 type = data.reward.type;
                 amount = data.reward.amount;
@@ -193,6 +202,15 @@ export default function TrungTamDao() {
         setMailTab('write');
         setSelectedLetter(null);
     };
+
+    useEffect(() => {
+        if (mailboxMode !== 'inbox') return;
+
+        setIsMailboxModalOpen(true);
+        setMailTab('inbox');
+        setSelectedLetter(null);
+        fetchInbox();
+    }, [mailboxMode]);
 
     const handleReadLetter = async (letter: Letter) => {
         setSelectedLetter(letter);
@@ -330,8 +348,6 @@ export default function TrungTamDao() {
                 </Link>
 
                 {/* NÚT CÀI ĐẶT - luôn ở góc phải trên cùng */}
-                <SettingsButton />
-
                 {/* Cây Thần Thụ */}
                 <div
                     onClick={handleShake}
@@ -585,7 +601,7 @@ export default function TrungTamDao() {
                                     onClick={() => setCustomAlert(prev => ({ ...prev, isOpen: false }))}
                                     className="w-full py-2 bg-[#8c7d6c] hover:bg-[#766859] text-[#fdfbf7] font-classic-serif font-bold text-xs rounded shadow-sm transition-colors uppercase tracking-wider"
                                 >
-                                    Xác nhận nhận thư
+                                    {customAlert.title === 'Thu Hoạch Thần Thụ' ? 'Cảm ơn Thần Thụ' : 'Xác nhận nhận thư'}
                                 </button>
                             )}
                         </div>

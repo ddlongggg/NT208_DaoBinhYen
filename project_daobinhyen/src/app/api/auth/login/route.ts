@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/app/lib/firebaseAdmin';
+import { getOnboardingStep, ONBOARDING_COOKIE, ONBOARDING_COOKIE_OPTIONS } from '@/app/lib/onboarding';
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,11 +28,12 @@ export async function POST(req: NextRequest) {
         // ========================================
         const userRef = db.collection('users').doc(decodedToken.uid);
         const userSnap = await userRef.get();
+        let firestoreUserData: any = userSnap.data();
 
         if (!userSnap.exists) {
             // User đăng nhập lần đầu qua Google/Facebook (chưa qua register)
             // → Tạo document với TOÀN BỘ schema mặc định
-            await userRef.set({
+            firestoreUserData = {
                 uid: decodedToken.uid,
                 email: decodedToken.email || null,
                 provider: decodedToken.firebase.sign_in_provider,
@@ -46,7 +48,8 @@ export async function POST(req: NextRequest) {
                 seeds: 0,
                 money: 0,
                 leaves:0,
-            });
+            };
+            await userRef.set(firestoreUserData);
             console.log('USER CREATED OK (full schema)');
         } else {
             // User đã tồn tại → chỉ cập nhật lastLogin
@@ -71,6 +74,7 @@ export async function POST(req: NextRequest) {
             sameSite: 'lax',
             path: '/',
         });
+        response.cookies.set(ONBOARDING_COOKIE, getOnboardingStep(firestoreUserData), ONBOARDING_COOKIE_OPTIONS);
 
         return response;
     } catch (error: any) {

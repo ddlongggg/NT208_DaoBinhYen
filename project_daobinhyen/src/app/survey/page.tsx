@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import SettingsButton from '@/app/components/SettingsButton';
 
 interface Scene {
   id: string; speaker: string; text: string; type?: string; next?: string;
@@ -251,21 +250,21 @@ export default function SurveyPage() {
     }
   };
 
-  const finishSurvey = () => {
+  const finishSurvey = async () => {
     playClickSound();
 
     // 🔥 LẤY CHỦ ĐỀ TỪ STATE ĐÃ LƯU (Không cắt chuỗi từ id nữa)
     const topic = selectedTopic;
 
     // 🔥 GỌI DUY NHẤT 1 API NÀY LÀ ĐỦ ĐỂ LƯU CẢ 3 TRƯỜNG VÀO FIREBASE
-    fetch('/api/user/updateMiniSurvey', {
+    await fetch('/api/user/updateMiniSurvey', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic, newScore: totalScore })
     });
 
     localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
-    router.push('/homepage');
+    router.push('/daily-checkin');
   };
   // --- RENDERING ---
 
@@ -354,7 +353,6 @@ export default function SurveyPage() {
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
 
       {/* NÚT CÀI ĐẶT */}
-      <SettingsButton />
 
       <div className="absolute inset-0 bg-cover bg-center animate-ken-burns" style={{ backgroundImage: "url('/Island8.0.jpg')" }}></div>
       <div className="absolute inset-0 bg-black/30"></div>

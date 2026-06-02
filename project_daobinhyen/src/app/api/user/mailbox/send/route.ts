@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     // Tính thời gian giao thư (24h sau)
     const deliverAt = new Date();
-    deliverAt.setSeconds(deliverAt.getSeconds() + 10);
+    deliverAt.setSeconds(deliverAt.getSeconds() + 5);
 
     await db
       .collection('mailbox')

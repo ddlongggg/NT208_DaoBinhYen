@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/app/lib/firebaseAdmin';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
+import { ONBOARDING_COOKIE, ONBOARDING_COOKIE_OPTIONS } from '@/app/lib/onboarding';
 import { FieldValue } from 'firebase-admin/firestore'; // Dùng để cộng dồn đồ
 
 export async function POST(req: Request) {
@@ -9,6 +10,7 @@ export async function POST(req: Request) {
         const cookieStore = await cookies();
         const sessionCookie = cookieStore.get('session')?.value;
         if (!sessionCookie) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const currentOnboardingStep = cookieStore.get(ONBOARDING_COOKIE)?.value;
         const decodedClaims = await getAuth().verifySessionCookie(sessionCookie, true);
 
         const { topic, newScore } = await req.json();
@@ -59,7 +61,10 @@ export async function POST(req: Request) {
         await userRef.update(updates);
 
         // Trả về kết quả kèm phần thưởng (nếu có)
-        return NextResponse.json({ success: true, newScore, reward });
+        const response = NextResponse.json({ success: true, newScore, reward });
+        const nextOnboardingStep = currentOnboardingStep === 'done' ? 'done' : 'daily';
+        response.cookies.set(ONBOARDING_COOKIE, nextOnboardingStep, ONBOARDING_COOKIE_OPTIONS);
+        return response;
     } catch (error) {
         console.error("Lỗi API updateMiniSurvey:", error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

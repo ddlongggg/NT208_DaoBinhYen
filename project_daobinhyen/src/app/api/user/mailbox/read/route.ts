@@ -37,6 +37,10 @@ const markLetterAsRead = async (req: NextRequest) => {
       return NextResponse.json({ error: 'Thư chưa được giao, chưa thể đọc' }, { status: 403 });
     }
 
+    if (letterData?.status === 'deleted') {
+      return NextResponse.json({ error: 'Thư đã bị xóa' }, { status: 404 });
+    }
+
     // Nếu đã đọc rồi thì không cần update lại
     if (letterData?.is_read === true && letterData?.status === 'read') {
       return NextResponse.json({ success: true, alreadyRead: true });
