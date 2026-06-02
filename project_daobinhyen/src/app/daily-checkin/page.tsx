@@ -69,6 +69,7 @@ export default function DailyCheckinPage() {
 
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+  const didFetch = useRef(false);
 
   const getGlobalVol = (): number => {
     if (typeof window === 'undefined') return 1;
@@ -78,6 +79,9 @@ export default function DailyCheckinPage() {
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
+
     const fetchUserData = async () => {
       try {
         const res = await fetch('/api/user/getUserInFo');
@@ -206,8 +210,15 @@ export default function DailyCheckinPage() {
     return [...conversationScenes, ...resultScenes];
   }, [userData, selectedBranch, seedReward]);
   useEffect(() => {
-    if (scenario.length > 0 && !currentScene) {
-      setCurrentScene(scenario[0]);
+    if (scenario.length > 0) {
+      if (!currentScene) {
+        setCurrentScene(scenario[0]);
+      } else {
+        const matching = scenario.find(s => s.id === currentScene.id);
+        if (matching && matching !== currentScene) {
+          setCurrentScene(matching);
+        }
+      }
     }
   }, [scenario, currentScene]);
 
