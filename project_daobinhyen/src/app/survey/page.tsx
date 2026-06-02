@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import SettingsButton from '@/app/components/SettingsButton';
 
 interface Scene {
   id: string; speaker: string; text: string; type?: string; next?: string;
@@ -354,7 +353,6 @@ export default function SurveyPage() {
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
 
       {/* NÚT CÀI ĐẶT */}
-      <SettingsButton />
 
       <div className="absolute inset-0 bg-cover bg-center animate-ken-burns" style={{ backgroundImage: "url('/Island8.0.jpg')" }}></div>
       <div className="absolute inset-0 bg-black/30"></div>

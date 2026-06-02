@@ -4,6 +4,7 @@ import { AuthProvider } from '@/app/context/AuthContext';
 import ProfileBar from '@/app/components/ProfileBar';
 import ShopGlobal from '@/app/components/ShopGlobal';
 import PeriodicCheckin from '@/app/components/PeriodicCheckin';
+import GlobalSettingsButton from '@/app/components/GlobalSettingsButton';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
           <ProfileBar />
           <ShopGlobal />
           <PeriodicCheckin />
+          <GlobalSettingsButton />
           {children}
         </AuthProvider>
       </body>

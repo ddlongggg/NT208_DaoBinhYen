@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/app/lib/firebaseAdmin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function DELETE(req: NextRequest) {
     try {
@@ -27,7 +28,11 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'Không tìm thấy thư' }, { status: 404 });
         }
 
-        await letterRef.delete();
+        await letterRef.update({
+            status: 'deleted',
+            is_read: true,
+            deleted_at: Timestamp.now()
+        });
 
         return NextResponse.json({ success: true, message: 'Đã xóa thư' });
     } catch (error) {

@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from '@/app/lib/firebase'; 
-import SettingsButton from '@/app/components/SettingsButton';
 
 type TimeSession = 'night' | 'sunrise' | 'midday' | 'afternoon';
 
@@ -195,7 +194,6 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
       style={{ backgroundImage: `url(${bgImages[session]})` }}
     >
       {/* NÚT CÀI ĐẶT */}
-      <SettingsButton />
       {activePanel && (
         <div className="absolute top-20 right-20 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
           {activePanel === 'lofi' ? (
