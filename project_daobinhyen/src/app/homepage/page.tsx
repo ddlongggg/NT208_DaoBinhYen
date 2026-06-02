@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import SettingsButton from '@/app/components/SettingsButton';
 
 interface UserProfile {
     name: string;
@@ -11,6 +10,13 @@ interface UserProfile {
     emotion: string;
     gold: number;
     level: number;
+}
+
+interface Letter {
+    id: string;
+    content: string;
+    is_read: boolean;
+    status: string;
 }
 
 export default function DynamicIsland() {
@@ -21,6 +27,8 @@ export default function DynamicIsland() {
     const [userEmotion, setUserEmotion] = useState('Hạnh phúc');
     const [hoveredZone, setHoveredZone] = useState<string | null>(null);
     const [username, setUsername] = useState('Lữ Khách');
+    const [unreadLetters, setUnreadLetters] = useState<Letter[]>([]);
+    const [showMailNotice, setShowMailNotice] = useState(false);
     const [userData, setUserData] = useState({
         username: 'Đang tải...',
         lastSurveyScore: 0,
@@ -57,6 +65,54 @@ export default function DynamicIsland() {
 
         fetchUserData();
     }, []);
+
+    const getDismissedMailIds = () => {
+        try {
+            return JSON.parse(sessionStorage.getItem('homepage_mail_notice_dismissed_ids') || '[]') as string[];
+        } catch {
+            return [];
+        }
+    };
+
+    const dismissCurrentMailNotice = () => {
+        const dismissedIds = new Set(getDismissedMailIds());
+        unreadLetters.forEach(letter => dismissedIds.add(letter.id));
+        sessionStorage.setItem('homepage_mail_notice_dismissed_ids', JSON.stringify([...dismissedIds]));
+    };
+
+    useEffect(() => {
+        const fetchUnreadLetters = async () => {
+            try {
+                const res = await fetch('/api/user/mailbox/inbox');
+                if (!res.ok) return;
+
+                const dismissedIds = new Set(getDismissedMailIds());
+                const data = await res.json();
+                const unread = (data.letters || []).filter((letter: Letter) =>
+                    letter.status === 'delivered' && !letter.is_read && !dismissedIds.has(letter.id)
+                );
+
+                setUnreadLetters(unread);
+                setShowMailNotice(unread.length > 0);
+            } catch (error) {
+                console.error('Loi kiem tra thu tren homepage:', error);
+            }
+        };
+
+        fetchUnreadLetters();
+        const interval = window.setInterval(fetchUnreadLetters, 10000);
+        return () => window.clearInterval(interval);
+    }, []);
+
+    const handleDismissMailNotice = () => {
+        dismissCurrentMailNotice();
+        setShowMailNotice(false);
+    };
+
+    const handleOpenMailNotice = () => {
+        dismissCurrentMailNotice();
+        router.push('/thanthu?mailbox=inbox');
+    };
 
     // --- CHI TIẾT THÊM MỚI: State quản lý bảng thông tin ---
     const [selectedZone, setSelectedZone] = useState<{ title: string, path: string, desc: string, img: string } | null>(null);
@@ -156,6 +212,10 @@ export default function DynamicIsland() {
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black">
             <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap');
+                .font-classic-serif {
+                    font-family: 'Merriweather', Georgia, serif !important;
+                }
                 @keyframes floatingBg {
                     0% { transform: translateY(0px); }
                     50% { transform: translateY(-10px); }
@@ -167,8 +227,6 @@ export default function DynamicIsland() {
             `}</style>
 
             {/* NÚT BÁNH RĂNG CÀI ĐẶT */}
-            <SettingsButton />
-
             <div
                 className="absolute -left-[0%] -top-[5%] w-[100%] h-[115%] animate-floating transition-all duration-1000 ease-in-out"
                 style={{
@@ -303,6 +361,46 @@ export default function DynamicIsland() {
                                 <button onClick={() => setSelectedZone(null)} className="flex-1 py-3 rounded-2xl border border-white/10 text-gray-400 text-[10px] font-black uppercase hover:bg-white/10 transition-all">Quay lại</button>
                                 <button onClick={() => router.push(selectedZone.path)} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-700 text-white text-[10px] font-black uppercase shadow-lg shadow-pink-500/20 hover:opacity-90 transition-opacity">Đi Đến</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showMailNotice && (
+                <div className="fixed inset-0 z-[1100] flex items-center justify-center px-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" onClick={handleDismissMailNotice} />
+                    <div
+                        className="font-classic-serif relative w-full max-w-md rounded-xl border-[4px] border-[#d2c4a7] bg-[#fdfbf7] p-7 text-[#4a4036] shadow-2xl"
+                        style={{ backgroundImage: 'radial-gradient(#e6dcc6 1px, transparent 1px)', backgroundSize: '20px 20px' }}
+                    >
+                        <div className="absolute left-5 top-5 flex h-16 w-12 -rotate-3 flex-col items-center justify-center border-2 border-dashed border-[#d2c4a7] bg-[#fdfbf7] p-1 opacity-75">
+                            <span className="text-xl">💌</span>
+                            <span className="font-classic-serif text-[7px] font-bold uppercase leading-tight text-[#8c7d6c]">Thư đến</span>
+                        </div>
+
+                        <div className="mb-6 mt-2 flex flex-col items-center text-center">
+                            <h2 className="mb-2 font-classic-serif text-2xl font-black uppercase tracking-widest text-[#4a4036]">
+                                Có thư mới
+                            </h2>
+                            <div className="mb-3 h-1 w-24 rounded-full bg-[#8c7d6c]/45" />
+                            <p className="px-4 font-classic-serif text-sm italic leading-relaxed text-[#8c7d6c]">
+                                Hòm thư tương lai của bạn có {unreadLetters.length} lá thư đã đến lúc mở.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <button
+                                onClick={handleDismissMailNotice}
+                                className="flex-1 rounded-lg border border-[#d2c4a7] px-4 py-3 text-sm font-bold uppercase tracking-wide text-[#8c7d6c] shadow-sm transition hover:bg-[#f4ecd8]"
+                            >
+                                Bỏ qua
+                            </button>
+                            <button
+                                onClick={handleOpenMailNotice}
+                                className="flex-1 rounded-lg bg-[#8c7d6c] px-4 py-3 text-sm font-bold uppercase tracking-wide text-[#fdfbf7] shadow-[0_4px_14px_0_rgba(140,125,108,0.39)] transition hover:bg-[#766859]"
+                            >
+                                Mở thư
+                            </button>
                         </div>
                     </div>
                 </div>
