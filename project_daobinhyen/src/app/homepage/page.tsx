@@ -154,11 +154,11 @@ export default function DynamicIsland() {
     const zonesInfo: Record<string, any> = {
         "/haidang": { title: "Hải Đăng", desc: "Nơi lưu giữ những bí mật cổ xưa của hòn đảo.", img: "HaiDangg.png" },
         "/thanthu": { title: "Cây Thần Thụ", desc: "Trái tim của đảo, nơi nguồn năng lượng sống dồi dào.", img: "TrungTamDao.png" },
-        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian tĩnh lặng để lắng nghe tiếng sóng.", img: "/wooden-house/midday.png" },
+        "/nhago": { title: "Nhà Gỗ Bình Yên", desc: "Không gian mộc mạc lắng nghe tiếng nhạc dịu êm giúp con người chìm giấc ngủ.", img: "/wooden-house/midday.png" },
         "/suoinguon": { title: "Suối Nguồn Cảm Xúc", desc: "Dòng suối nguồn kỳ diệu gột rửa muộn phiền.", img: "/backgroundsuoinguon/SuoiNguonCamXuc12AM.png" },
         "/vuonhoa": { title: "Vườn Tâm Hồn", desc: "Mỗi bông hoa đại diện cho một kỷ niệm đẹp.", img: "/vuonhoa/VuonHoa.png" },
         "/vachda": { title: "Vách Đá Tầm Nhìn", desc: "Nơi cao nhất để phóng tầm mắt ra đại dương.", img: "/island/Island10AM.jpg" },
-        "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Mặt hồ phẳng lặng giúp bạn nhìn thấu chính mình.", img: "HoNuoc.png" }
+        "/honuoc": { title: "Hồ Nước Soi Bóng", desc: "Nơi mặt hồ phẳng lặng lắng nghe những xao động và ôm lấy cảm xúc thật của bạn.", img: "HoNuoc.png" }
     };
 
     const handleZoneClick = (e: React.MouseEvent, path: string) => {
