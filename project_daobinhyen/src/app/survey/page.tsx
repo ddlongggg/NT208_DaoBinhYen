@@ -250,21 +250,21 @@ export default function SurveyPage() {
     }
   };
 
-  const finishSurvey = () => {
+  const finishSurvey = async () => {
     playClickSound();
 
     // 🔥 LẤY CHỦ ĐỀ TỪ STATE ĐÃ LƯU (Không cắt chuỗi từ id nữa)
     const topic = selectedTopic;
 
     // 🔥 GỌI DUY NHẤT 1 API NÀY LÀ ĐỦ ĐỂ LƯU CẢ 3 TRƯỜNG VÀO FIREBASE
-    fetch('/api/user/updateMiniSurvey', {
+    await fetch('/api/user/updateMiniSurvey', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic, newScore: totalScore })
     });
 
     localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
-    router.push('/homepage');
+    router.push('/daily-checkin');
   };
   // --- RENDERING ---
 
