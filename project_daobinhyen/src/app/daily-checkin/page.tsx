@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import SettingsButton from '@/app/components/SettingsButton';
 import styles from './daily-checkin.module.css';
 
 // --- INTERFACES ---
@@ -18,14 +17,6 @@ interface UserData {
   survey_study: number | null;
   survey_emotion: number | null;
   survey_sleep: number | null;
-}
-
-interface LetterData {
-  id: string;
-  content: string;
-  deliver_at: string;
-  sent_at: string;
-  status: 'pending' | 'delivered' | 'read';
 }
 
 interface Scene {
@@ -354,7 +345,7 @@ export default function DailyCheckinPage() {
 
     if (nextId === 'DO_LETTER_CHECK') {
       if (!userData || !pendingChoice) return;
-      setCurrentScene({ id: 'loading', speaker: SPEAKER, text: 'Khoan đã, để ta xem hòm thư...' });
+      setCurrentScene({ id: 'loading', speaker: SPEAKER, text: 'Khoan đã, để ta ghi nhận hôm nay...' });
 
       try {
         const resCheckin = await fetch('/api/user/daily-checkin', {
@@ -369,33 +360,14 @@ export default function DailyCheckinPage() {
           topicStreak: checkinResult.data?.topicStreak ?? prev.topicStreak
         } : null);
 
-        let nextScene: Scene;
-        const resInbox = await fetch('/api/user/mailbox/inbox');
-
-        if (resInbox.ok) {
-          const inboxData = await resInbox.json();
-          const letters: LetterData[] = inboxData.letters || [];
-          const validUnread = letters.filter(l => l.status === 'delivered');
-
-          if (validUnread.length === 1) {
-            nextScene = {
-              id: 'letter_one', speaker: SPEAKER,
-              text: `À đúng rồi ${userData.userName} ơi! Ta vừa xem qua hòm thư, có một bức thư con gửi từ trước vừa được mở khóa đấy. Để ta đọc cho nghe nhé: "${validUnread[0].content}"`,
-              type: 'next_button', next_text: 'Vào đảo', action: 'read_and_go', actionParams: { letterId: validUnread[0].id }
-            };
-          } else if (validUnread.length > 1) {
-            nextScene = {
-              id: 'letter_many', speaker: SPEAKER,
-              text: `Chà ${userData.userName}, hòm thư của con hôm nay nhộn nhịp lắm nhé! Có tận ${validUnread.length} bức thư từ quá khứ chưa đọc đã đến ngày mở rồi. Lát nữa vào đảo nhớ ghé qua hòm thư đến kiểm tra lại nhé!`,
-              type: 'next_button', next_text: 'Vào đảo', action: 'direct_go'
-            };
-          } else {
-            nextScene = { id: 'go_island_final', speaker: SPEAKER, text: 'Gió yên biển lặng, chúc con một ngày thật an lành trên đảo.', type: 'next_button', next_text: 'Vào đảo', action: 'direct_go' };
-          }
-        } else {
-          nextScene = { id: 'go_island_final', speaker: SPEAKER, text: 'Hôm nay con không có bức thư nào gửi cho bản thân cả, Gió yên biển lặng, chúc con một ngày thật an lành trên đảo.', type: 'next_button', next_text: 'Vào đảo', action: 'direct_go' };
-        }
-        setCurrentScene(nextScene);
+        setCurrentScene({
+          id: 'go_island_final',
+          speaker: SPEAKER,
+          text: 'Gió yên biển lặng, chúc con một ngày thật an lành trên đảo.',
+          type: 'next_button',
+          next_text: 'Vào đảo',
+          action: 'direct_go'
+        });
 
       } catch (error) {
         setCurrentScene({ id: 'go_island_final', speaker: SPEAKER, text: 'Gió yên biển lặng, chúc con một ngày thật an lành trên đảo.', type: 'next_button', next_text: 'Vào đảo', action: 'direct_go' });
@@ -450,7 +422,6 @@ export default function DailyCheckinPage() {
     <div className="relative w-full h-screen bg-[#1a1a1a] font-sans overflow-hidden">
       <audio ref={typingSoundRef} src="/typing.wav" preload="auto" />
       <audio ref={clickSoundRef} src="/select.wav" preload="auto" />
-      <SettingsButton />
       <div className={`absolute inset-0 bg-cover bg-center ${styles.animateKenBurns}`} style={{ backgroundImage: "url('/Island8.0.jpg')" }} />
       <div className="absolute inset-0 bg-black/30" />
       <div className={`fixed bottom-[15%] left-[5%] md:left-[8%] w-[260px] h-[400px] md:w-[420px] md:h-[620px] z-10 pointer-events-none drop-shadow-2xl ${styles.animateFloat}`}>
