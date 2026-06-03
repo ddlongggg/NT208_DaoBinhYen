@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import './StreamArea.css';
 import { useAuthContext } from '@/app/context/AuthContext';
 
@@ -44,6 +45,7 @@ export default function StreamArea() {
     const [isMyBoatFloating, setIsMyBoatFloating] = useState(false);
     const [bubbles, setBubbles] = useState<Bubble[]>([]);
     const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+    const [preloadedVideos, setPreloadedVideos] = useState<any[]>([]);
 
     // State quản lý hình nền (để null để không bị chớp giật lúc mới vào)
     const [bgImage, setBgImage] = useState<string | null>(null);
@@ -66,35 +68,30 @@ export default function StreamArea() {
 
     // LOGIC THAY ĐỔI HÌNH NỀN THEO THỜI GIAN THỰC
     useEffect(() => {
-        const fetchTimeAndSetBg = async () => {
+        const fetchTimeAndSetBg = () => {
             try {
-                // Đảm bảo đường dẫn này trỏ đúng vào API gọi thời gian của bạn
-                const res = await fetch('/api/auth/time');
-                if (res.ok) {
-                    const data = await res.json();
-                    const currentHour = data.hour; // Lấy số giờ từ 0 - 23
+                const currentHour = new Date().getHours(); // Lấy số giờ từ 0 - 23
 
-                    let newBgSrc = '';
+                let newBgSrc = '';
 
-                    // Phân chia thời gian khớp với các file trong thư mục của bạn
-                    if (currentHour >= 0 && currentHour < 6) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc0AM.png';
-                    } else if (currentHour >= 6 && currentHour < 8) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc6AM.png';
-                    } else if (currentHour >= 8 && currentHour < 12) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc8AM.png';
-                    } else if (currentHour >= 12 && currentHour < 16) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc12AM.png';
-                    } else if (currentHour >= 16 && currentHour < 18) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc4PM.png';
-                    } else if (currentHour >= 18 && currentHour < 21) {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc6PM.png';
-                    } else {
-                        newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc9PM.png';
-                    }
-
-                    setBgImage(newBgSrc);
+                // Phân chia thời gian khớp với các file trong thư mục của bạn
+                if (currentHour >= 0 && currentHour < 6) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc0AM.png';
+                } else if (currentHour >= 6 && currentHour < 8) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc6AM.png';
+                } else if (currentHour >= 8 && currentHour < 12) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc8AM.png';
+                } else if (currentHour >= 12 && currentHour < 16) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc12AM.png';
+                } else if (currentHour >= 16 && currentHour < 18) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc4PM.png';
+                } else if (currentHour >= 18 && currentHour < 21) {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc6PM.png';
+                } else {
+                    newBgSrc = '/backgroundsuoinguon/SuoiNguonCamXuc9PM.png';
                 }
+
+                setBgImage(newBgSrc);
             } catch (error) {
                 console.error("Lỗi khi lấy thời gian thực:", error);
             }
@@ -103,8 +100,8 @@ export default function StreamArea() {
         // Gọi ngay lần đầu khi tải trang
         fetchTimeAndSetBg();
 
-        // Tự động kiểm tra và cập nhật lại giờ mỗi 10 phút
-        const timeInterval = setInterval(fetchTimeAndSetBg, 600000);
+        // Tự động kiểm tra và cập nhật lại giờ mỗi 1 phút
+        const timeInterval = setInterval(fetchTimeAndSetBg, 60000);
 
         return () => clearInterval(timeInterval);
     }, []);
@@ -133,29 +130,42 @@ export default function StreamArea() {
 
     // Logic sinh bong bóng
     useEffect(() => {
-        const bubbleInterval = setInterval(async () => {
+        const fetchVideos = async () => {
             try {
-                const response = await fetch('/api/get-random-video');
-                if (!response.ok) throw new Error("API lỗi");
-                const data = await response.json();
-                const bubbleImages = ['/bongbongnuoc1.png', '/bongbongnuoc2.png', '/bongbongnuoc3.png'];
-                const randomBubbleImg = bubbleImages[Math.floor(Math.random() * bubbleImages.length)];
-
-                const newBubble: Bubble = {
-                    id: `bubble-${Date.now()}`,
-                    videoId: data.videoId,
-                    left: `${Math.random() * 94 + 3}%`,
-                    duration: `${Math.random() * 20 + 40}s`,
-                    imgSrc: randomBubbleImg,
-                };
-                setBubbles((prev) => [...prev, newBubble]);
-                setTimeout(() => setBubbles((prev) => prev.filter(b => b.id !== newBubble.id)), 60000);
+                const response = await fetch('/api/get-videos-list?chude=tat-ca');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.videos && data.videos.length > 0) {
+                        setPreloadedVideos(data.videos);
+                    }
+                }
             } catch (error) {
-                console.error("Lỗi khi sinh bong bóng:", error);
+                console.error("Lỗi khi tải video cho bong bóng:", error);
             }
+        };
+        fetchVideos();
+    }, []);
+
+    useEffect(() => {
+        if (preloadedVideos.length === 0) return;
+
+        const bubbleInterval = setInterval(() => {
+            const randomVideo = preloadedVideos[Math.floor(Math.random() * preloadedVideos.length)];
+            const bubbleImages = ['/bongbongnuoc1.png', '/bongbongnuoc2.png', '/bongbongnuoc3.png'];
+            const randomBubbleImg = bubbleImages[Math.floor(Math.random() * bubbleImages.length)];
+
+            const newBubble: Bubble = {
+                id: `bubble-${Date.now()}`,
+                videoId: randomVideo.videoId,
+                left: `${Math.random() * 94 + 3}%`,
+                duration: `${Math.random() * 20 + 40}s`,
+                imgSrc: randomBubbleImg,
+            };
+            setBubbles((prev) => [...prev, newBubble]);
+            setTimeout(() => setBubbles((prev) => prev.filter(b => b.id !== newBubble.id)), 60000);
         }, 8000);
         return () => clearInterval(bubbleInterval);
-    }, []);
+    }, [preloadedVideos]);
 
     const handleReleaseBoat = (message: string) => {
         const myBoat: Boat = {
@@ -182,7 +192,7 @@ export default function StreamArea() {
         <div className="stream-wrapper">
             {/* Chỉ render hình nền khi bgImage đã có đường dẫn */}
             {bgImage && (
-                <img src={bgImage} alt="Suối nguồn cảm xúc" className="stream-bg" />
+                <Image src={bgImage} alt="Suối nguồn cảm xúc" fill priority className="stream-bg object-cover -z-10" />
             )}
 
             {/* CÁC VÙNG TƯƠNG TÁC KÈM TOOLTIP MA THUẬT */}

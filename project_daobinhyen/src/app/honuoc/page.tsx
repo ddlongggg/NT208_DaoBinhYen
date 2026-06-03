@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { db } from '@/app/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import * as faceapi from 'face-api.js';
@@ -369,10 +370,8 @@ const HoNuocPage = () => {
   if (!isClient) return null;
 
   return (
-    <div
-      className="relative min-h-screen w-full flex items-center justify-center bg-cover bg-center overflow-hidden"
-      style={{ backgroundImage: `url(${bgImages[session]})` }}
-    >
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+      <Image src={bgImages[session]} alt="Hồ nước" fill priority className="object-cover object-center -z-10" />
       <div className="absolute inset-0 bg-black/20 z-0" />
 
       {/* VÙNG CHẠM NƯỚC ĐA GIÁC */}

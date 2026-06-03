@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import LighthouseModalContainer, { ModalTab } from './components/modals/LighthouseModalContainer';
 import DongHoModalContainer from './components/modals/DongHoTapTrung/DongHoModalContainer';
 import GlobalAudioPlayer from './components/GlobalAudioPlayer';
@@ -31,18 +32,8 @@ export default function HaiDang() {
         setIsModalOpen(true);
     };
 
-    const fetchTime = async () => {
-        try {
-            const res = await fetch('/api/auth/time');
-            const data = await res.json();
-            if (data.hour !== undefined) {
-                setCurrentHour(data.hour);
-            }
-        } catch (error) {
-            console.error("Lỗi lấy thời gian:", error);
-            // If API fails, keep current time or use local time
-            setCurrentHour(new Date().getHours());
-        }
+    const fetchTime = () => {
+        setCurrentHour(new Date().getHours());
     };
 
     useEffect(() => {
@@ -112,13 +103,9 @@ export default function HaiDang() {
                     <div
                         key={stage}
                         className={`absolute inset-0 transition-opacity ease-in-out ${transitionDuration} ${stage === groundFloorStage ? 'opacity-100' : 'opacity-0'}`}
-                        style={{
-                            backgroundImage: `url('${src}')`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                        }}
-                    />
+                    >
+                        <Image src={src} alt="Ground Floor" fill priority className="object-cover object-center -z-10" />
+                    </div>
                 ))}
                 {/* --- CÁC VÙNG CLICK CỦA TẦNG 1 --- */}
 
@@ -211,13 +198,9 @@ export default function HaiDang() {
                     <div
                         key={stage}
                         className={`absolute inset-0 transition-opacity ease-in-out ${transitionDuration} ${stage === timeStage ? 'opacity-100' : 'opacity-0'}`}
-                        style={{
-                            backgroundImage: `url('${src}')`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                        }}
-                    />
+                    >
+                        <Image src={src} alt="Lighthouse" fill priority className="object-cover object-center -z-10" />
+                    </div>
                 ))}
 
                 {/* --- LỚP PHỦ ÁNH SÁNG THEO NHẠC --- */}

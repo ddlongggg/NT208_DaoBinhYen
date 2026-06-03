@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import SettingsButton from '@/app/components/SettingsButton';
 
 interface Letter {
@@ -79,18 +80,8 @@ export default function TrungTamDao() {
     };
 
     useEffect(() => {
-        const fetchTimeAndSetImage = async () => {
-            try {
-                const res = await fetch(`/api/auth/time?t=${new Date().getTime()}`);
-                const data = await res.json();
-                if (data.hour !== undefined) {
-                    setBgImage(getBackgroundImage(data.hour));
-                } else {
-                    setBgImage(getBackgroundImage(new Date().getHours()));
-                }
-            } catch {
-                setBgImage(getBackgroundImage(new Date().getHours()));
-            }
+        const fetchTimeAndSetImage = () => {
+            setBgImage(getBackgroundImage(new Date().getHours()));
         };
 
         fetchTimeAndSetImage();
@@ -321,15 +312,8 @@ export default function TrungTamDao() {
                 </span>
             ))}
 
-            <div
-                className="absolute inset-0 w-full h-full"
-                style={{
-                    backgroundImage: `url('${bgImage}')`,
-                    backgroundSize: '100% 100%',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }}
-            >
+            <div className="absolute inset-0 w-full h-full">
+                <Image src={bgImage} alt="Cây Thần Thụ" fill priority className="object-fill -z-10" />
                 <div className="absolute inset-0 bg-black/10 z-0 pointer-events-none"></div>
 
                 {/* Nút thoát ra homepage */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -100,7 +101,7 @@ export default function DynamicIsland() {
         };
 
         fetchUnreadLetters();
-        const interval = window.setInterval(fetchUnreadLetters, 10000);
+        const interval = window.setInterval(fetchUnreadLetters, 60000);
         return () => window.clearInterval(interval);
     }, []);
 
@@ -185,14 +186,11 @@ export default function DynamicIsland() {
     };
 
     useEffect(() => {
-        const fetchTimeAndSetImage = async () => {
+        const fetchTimeAndSetImage = () => {
             try {
-                const res = await fetch('/api/auth/time');
-                const data = await res.json();
-                if (data.hour !== undefined) {
-                    const newImage = getBackgroundImage(data.hour);
-                    setBgImage(newImage);
-                }
+                const currentHour = new Date().getHours();
+                const newImage = getBackgroundImage(currentHour);
+                setBgImage(newImage);
             } catch (error) {
                 console.error("Lỗi lấy thời gian:", error);
                 setBgImage('/island/Island0PM.jpg');
@@ -227,15 +225,14 @@ export default function DynamicIsland() {
             `}</style>
 
             {/* NÚT BÁNH RĂNG CÀI ĐẶT */}
-            <div
-                className="absolute -left-[0%] -top-[5%] w-[100%] h-[115%] animate-floating transition-all duration-1000 ease-in-out"
-                style={{
-                    backgroundImage: `url('${bgImage}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center bottom',
-                    backgroundRepeat: 'no-repeat',
-                }}
-            >
+            <div className="absolute -left-[0%] -top-[5%] w-[100%] h-[115%] animate-floating transition-all duration-1000 ease-in-out">
+                <Image
+                    src={bgImage}
+                    alt="Đảo Bình Yên"
+                    fill
+                    priority
+                    className="object-cover object-bottom -z-10"
+                />
 
                 {/* VÙNG 1: Ngọn Hải Đăng */}
                 <Link

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from '@/app/lib/firebase'; 
 
@@ -190,10 +191,8 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
   };
 
   return (
-    <div 
-      className="relative w-screen h-screen bg-cover bg-center transition-all duration-[2000ms] ease-in-out flex items-center justify-center overflow-hidden"
-      style={{ backgroundImage: `url(${bgImages[session]})` }}
-    >
+    <div className="relative w-screen h-screen transition-all duration-[2000ms] ease-in-out flex items-center justify-center overflow-hidden">
+      <Image src={bgImages[session]} alt="Wood House" fill priority className="object-cover object-center -z-10" />
       {/* NÚT CÀI ĐẶT */}
       {activePanel && (
         <div className="absolute top-20 right-20 z-50 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-white w-80 shadow-2xl transition-all animate-in fade-in slide-in-from-right-5">
