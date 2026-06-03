@@ -21,7 +21,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Âm thanh chim hót */}
-            <audio autoPlay loop src="/tiengchi.mp3" />
+            <audio autoPlay loop src="/tiengchim.mp3" />
 
             <div className={styles.content}>
                 <img src="/logo.png" alt="Logo Đảo Bình Yên" className={styles.logo} />
