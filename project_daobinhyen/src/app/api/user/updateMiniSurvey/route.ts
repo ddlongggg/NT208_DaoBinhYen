@@ -60,9 +60,23 @@ export async function POST(req: Request) {
         // 3. CẬP NHẬT DATABASE
         await userRef.update(updates);
 
+        // 🔥 LOGIC COOKIE: Check user mới hay cũ
+        let nextOnboardingStep: 'survey' | 'daily' | 'done' = 'daily';
+        
+        console.log('🔍 updateMiniSurvey - currentOnboardingStep:', currentOnboardingStep);
+        
+        if (currentOnboardingStep === 'done') {
+          nextOnboardingStep = 'done';
+        } else if (currentOnboardingStep === 'survey') {
+          // User mới vừa setup username + làm survey lần đầu → set to 'done' để vào homepage
+          // (Lần sau login sẽ thành 'daily')
+          nextOnboardingStep = 'done';
+        }
+
+        console.log('✅ updateMiniSurvey - Setting cookie to:', nextOnboardingStep);
+
         // Trả về kết quả kèm phần thưởng (nếu có)
-        const response = NextResponse.json({ success: true, newScore, reward });
-        const nextOnboardingStep = currentOnboardingStep === 'done' ? 'done' : 'daily';
+        const response = NextResponse.json({ success: true, newScore, reward, debugCookie: nextOnboardingStep });
         response.cookies.set(ONBOARDING_COOKIE, nextOnboardingStep, ONBOARDING_COOKIE_OPTIONS);
         return response;
     } catch (error) {

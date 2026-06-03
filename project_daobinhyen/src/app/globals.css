@@ -25,6 +25,23 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Hide Copilot or browser extension widgets */
+[data-testid*="copilot"],
+[aria-label*="copilot"],
+[class*="copilot"],
+[id*="copilot"],
+[class*="github-chat"],
+[class*="chat-widget"],
+[class*="assistant"],
+button[title*="Chat"],
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="z-index: 9"],
+/* Hide potential theme switcher or plugin icons */
+[role="button"][aria-label*="theme"],
+[role="button"][aria-label*="plugin"],
+button[title*="GitHub"] {
+  display: none !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
