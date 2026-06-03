@@ -590,7 +590,7 @@ export default function PetSanctuary() {
                 </Link>
             )}
 
-            <button onClick={() => setShowGuide(true)} className="absolute top-6 right-20 z-50 px-5 py-2.5 bg-blue-500/30 backdrop-blur-md border border-blue-400/50 rounded-full text-blue-200 font-bold hover:bg-blue-500/50 transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+            <button onClick={() => setShowGuide(true)} className="absolute top-6 right-24 z-50 px-5 py-2.5 bg-blue-500/30 backdrop-blur-md border border-blue-400/50 rounded-full text-blue-200 font-bold hover:bg-blue-500/50 transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                 📖 Sổ Tay Chăm Sóc
             </button>
 
