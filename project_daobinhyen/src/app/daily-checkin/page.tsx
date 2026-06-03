@@ -323,16 +323,25 @@ export default function DailyCheckinPage() {
       let introText = '';
 
       if (diffDays >= 30) {
-        introText = `Cũng lâu rồi ta mới gặp con. Lần trước tâm trạng của con với vấn đề này đang ở mức ${oldScore}/100. Hôm nay quay lại, con thấy trong lòng đã khá hơn chưa?`;
+        introText = oldScore < 60
+          ? `Cũng lâu rồi ta mới gặp con. Lần trước tâm trạng của con với vấn đề này đang ở mức ${oldScore}/100. Hôm nay quay lại, con thấy trong lòng đã khá hơn chưa?`
+          : `Cũng lâu rồi ta mới gặp con. Lần trước năng lượng của con rất tốt ở mức ${oldScore}/100. Hôm nay quay lại, con hãy cố gắng giữ vững cảm xúc như vậy nhé. So với lúc đó con cảm thấy thế nào?`;
       } else if (isDifferentTopic) {
         // Nhận ra người dùng vừa than phiền chuyện khác hôm qua, nay lại quay về chuyện cũ này
-        introText = `Hôm trước ta thấy con bận tâm chuyện khác, nay lại quay về trăn trở chuyện này sao? Lần trước con đang ở mức ${oldScore}/100 điểm. Nay có khá hơn chút nào không?`;
+        introText = oldScore < 60
+          ? `Hôm trước ta thấy con bận tâm chuyện khác, nay lại quay về trăn trở chuyện này sao? Lần trước con đang ở mức ${oldScore}/100 điểm. Nay có khá hơn chút nào không?`
+          : `Hôm trước ta thấy con bận tâm chuyện khác, nay lại quay về chuyện này. Lần trước con đang ở mức rất tốt là ${oldScore}/100 điểm, hãy cố gắng giữ vững cảm xúc như vậy nhé. Nay con thấy sao?`;
       } else if (userData!.topicStreak >= 3) {
         // Nhận ra người dùng đang kẹt trong 1 vấn đề nhiều ngày liên tiếp
-        introText = `Này ${userData!.userName}... Ta thấy con loanh quanh với nỗi buồn này hơi lâu rồi đấy. Mức ${oldScore}/100 của lần trước liệu hôm nay có xê dịch được chút nào theo hướng tích cực không con?`;
+        if (oldScore < 60) {
+          introText = `Này ${userData!.userName}... Ta biết con đã ôm nỗi buồn đó khá lâu rồi. Mức ${oldScore}/100 của lần trước liệu hôm nay có xê dịch được chút nào theo hướng tích cực không con?`;
+        } else {
+          introText = `Này ${userData!.userName}... Lần trước con đã làm rất tốt với mức ${oldScore}/100 điểm. Con hãy cố gắng giữ vững cảm xúc như vậy nhé! Hôm nay tâm trạng của con thế nào?`;
+        }
       } else {
         // Hỏi thăm bình thường
-        introText = `Lần trước đến đây, tâm trạng của con với vấn đề này đang ở mức ${oldScore}/100 điểm. Liệu hôm nay con có cảm thấy bản thân mình tốt lên chút nào không?`;
+        introText = oldScore < 60 ? `Lần trước đến đây, tâm trạng của con với vấn đề này đang ở mức ${oldScore}/100 điểm. Liệu hôm nay con có cảm thấy bản thân mình tốt lên chút nào không?`
+          : `Lần trước đến đây, tâm trạng của con đang rất tích cực ở mức ${oldScore}/100 điểm. Hãy cố gắng giữ vững cảm xúc như vậy nhé! Hôm nay con cảm thấy thế nào?`;
       }
 
       setCurrentScene({
