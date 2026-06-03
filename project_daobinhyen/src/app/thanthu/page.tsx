@@ -32,10 +32,12 @@ interface CustomAlert {
     onConfirm?: () => void;
 }
 
+type TimeSession = 'night' | 'sunrise' | 'midday' | 'afternoon' | 'evening';
+
 export default function TrungTamDao() {
     const searchParams = useSearchParams();
     const mailboxMode = searchParams.get('mailbox');
-    const [bgImage, setBgImage] = useState<string>('');
+    const [session, setSession] = useState<TimeSession>('midday');
     const [isMailboxModalOpen, setIsMailboxModalOpen] = useState(false);
     const [mailTab, setMailTab] = useState<'write' | 'inbox'>('write');
     const [, setShakeCount] = useState(0);
@@ -71,23 +73,29 @@ export default function TrungTamDao() {
         });
     };
 
-    const getBackgroundImage = (hour: number) => {
-        if (hour >= 5 && hour < 6) return '/binhminhtrungtamdao.png';
-        if (hour >= 16 && hour < 18) return '/hoanghontrungtamdao.png';
-        if (hour >= 18 && hour < 22) return '/buoitoitrungtamdao.png';
-        if (hour >= 22 || hour < 5) return '/buoikhuyatrungtamdao.png';
-        return '/TrungTamDao.png';
-    };
-
     useEffect(() => {
-        const fetchTimeAndSetImage = () => {
-            setBgImage(getBackgroundImage(new Date().getHours()));
+        const checkTime = () => {
+            const hour = new Date().getHours();
+            if (hour >= 0 && hour < 5) setSession('night');
+            else if (hour >= 5 && hour < 7) setSession('sunrise');
+            else if (hour >= 7 && hour < 16) setSession('midday');
+            else if (hour >= 16 && hour < 18) setSession('afternoon');
+            else if (hour >= 18 && hour < 22) setSession('evening');
+            else setSession('night');
         };
 
-        fetchTimeAndSetImage();
-        const interval = setInterval(fetchTimeAndSetImage, 60000);
-        return () => clearInterval(interval);
+        checkTime();
+        const timer = setInterval(checkTime, 60000);
+        return () => clearInterval(timer);
     }, []);
+
+    const bgImages: Record<TimeSession, string> = {
+        night: '/buoikhuyatrungtamdao.png',
+        sunrise: '/binhminhtrungtamdao.png',
+        midday: '/TrungTamDao.png',
+        afternoon: '/hoanghontrungtamdao.png',
+        evening: '/buoitoitrungtamdao.png',
+    };
 
     const spawnParticles = useCallback((type: 'leaf' | 'coin' | 'seed') => {
         const count = type === 'leaf' ? 8 : type === 'coin' ? 5 : 4;
@@ -270,10 +278,6 @@ export default function TrungTamDao() {
         }
     };
 
-    if (!bgImage) {
-        return <div className="bg-black w-screen h-screen" />;
-    }
-
     return (
         <main className="relative w-screen h-screen flex flex-col overflow-hidden bg-black">
             <style>{`
@@ -313,7 +317,7 @@ export default function TrungTamDao() {
             ))}
 
             <div className="absolute inset-0 w-full h-full">
-                <Image src={bgImage} alt="Cây Thần Thụ" fill priority className="object-fill -z-10" />
+                <Image src={bgImages[session]} alt="Cây Thần Thụ" fill priority className="object-fill object-center" />
                 <div className="absolute inset-0 bg-black/10 z-0 pointer-events-none"></div>
 
                 {/* Nút thoát ra homepage */}
