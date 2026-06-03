@@ -59,6 +59,7 @@ export default function SurveyPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [sentenceIndex, setSentenceIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const typingSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -120,11 +121,14 @@ export default function SurveyPage() {
         const hasUsername = !!data.username;
         const hasSurvey = data.lastSurveyScore !== null && data.lastSurveyType !== null;
 
+        // 🔥 ĐỀU BIẾT USER MỚI HAY CŨ
         if (!hasUsername) {
+          setIsNewUser(true);
           setStage('START');
         } else if (forcedTopic) {
           // Bỏ qua màn hình giới thiệu, nhảy thẳng vào khảo sát chủ đề bị thiếu
           setUserName(data.username);
+          setIsNewUser(false);
 
           setSelectedTopic(forcedTopic); // 🔥 LƯU VÀO STATE NẾU BỊ ÉP CHUYỂN TRANG
 
@@ -132,6 +136,7 @@ export default function SurveyPage() {
           setCurrentSceneId(`${forcedTopic}_q1`);
         } else if (!hasSurvey) {
           setUserName(data.username);
+          setIsNewUser(false);
           setStage('INTRO');
         } else {
           router.replace('/daily-checkin');
@@ -257,14 +262,32 @@ export default function SurveyPage() {
     const topic = selectedTopic;
 
     // 🔥 GỌI DUY NHẤT 1 API NÀY LÀ ĐỦ ĐỂ LƯU CẢ 3 TRƯỜNG VÀO FIREBASE
-    await fetch('/api/user/updateMiniSurvey', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic, newScore: totalScore })
-    });
+    try {
+      const res = await fetch('/api/user/updateMiniSurvey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, newScore: totalScore })
+      });
+      const data = await res.json();
+      console.log('🔍 Survey finishSurvey - updateMiniSurvey response:', data);
+    } catch (err) {
+      console.error('❌ Survey finishSurvey - updateMiniSurvey error:', err);
+    }
 
     localStorage.setItem('user_data', JSON.stringify({ name: userName, score: totalScore }));
-    router.push('/daily-checkin');
+    
+    // 🔥 ĐỢI COOKIE CẬP NHẬT TRƯỚC KHI NAVIGATE
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    console.log('🔍 Survey finishSurvey - isNewUser:', isNewUser, 'Navigating to:', isNewUser ? '/homepage' : '/daily-checkin');
+    
+    // 🔥 USER MỚI (vừa set username) -> VÀO HOMEPAGE, không vào daily-checkin
+    // USER CŨ (có username từ trước) -> VÀO DAILY-CHECKIN LẦN ĐẦU TIÊN
+    if (isNewUser) {
+      router.push('/homepage');
+    } else {
+      router.push('/daily-checkin');
+    }
   };
   // --- RENDERING ---
 
