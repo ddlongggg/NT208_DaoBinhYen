@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from '@/app/context/AuthContext';
 import ProfileBar from '@/app/components/ProfileBar';
 import ShopGlobal from '@/app/components/ShopGlobal';
+import PetGlobalButton from '@/app/components/PetGlobalButton';
 import PeriodicCheckin from '@/app/components/PeriodicCheckin';
 import GlobalSettingsButton from '@/app/components/GlobalSettingsButton';
 import "./globals.css";
@@ -37,6 +38,7 @@ export default function RootLayout({
         <AuthProvider>
           <ProfileBar />
           <ShopGlobal />
+          <PetGlobalButton />
           <PeriodicCheckin />
           <GlobalSettingsButton />
           {children}

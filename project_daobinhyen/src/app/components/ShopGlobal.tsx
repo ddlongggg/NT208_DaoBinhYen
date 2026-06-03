@@ -84,24 +84,6 @@ const PET_LIST: PetItem[] = [
     }
 ];
 
-// ==========================================
-// RANK SYSTEM (SAME AS PROFILEBAR)
-// ==========================================
-const RANK_SYSTEM = {
-    emotion: [
-        { name: 'Vực Thẳm Tâm Linh', color: 'text-red-400' },
-        { name: 'Sương Mù Uất Nghẹn', color: 'text-red-400' },
-        { name: 'Tro Tàn Lặng Lẽ', color: 'text-gray-400' },
-        { name: 'Chênh Vênh Độc Hành', color: 'text-gray-400' },
-        { name: 'Tĩnh Lặng Thấu Suốt', color: 'text-blue-400' },
-        { name: 'Tia Sáng Khởi Nguyên', color: 'text-blue-400' },
-        { name: 'Vườn Hoa Chớm Nở', color: 'text-green-400' },
-        { name: 'Rạng Rỡ Ánh Dương', color: 'text-yellow-400' },
-        { name: 'Thăng Hoa Thuần Khiết', color: 'text-purple-400' },
-        { name: 'Đại Ngộ Thiên Đường', color: 'text-pink-400' }
-    ],
-};
-
 export default function ShopGlobal() {
     const pathname = usePathname() || '';
     const { user: firebaseUser, userDataExtended, setUserDataExtended } = useAuthContext();
@@ -175,21 +157,6 @@ export default function ShopGlobal() {
         vang: Number(activeData.essence_vang ?? 0),
         cam: Number(activeData.essence_cam ?? 0),
     };
-
-    // Calculate level and rank
-    const userPoints = Number(activeData.lastSurveyScore ?? 0);
-    const surveyType = activeData.lastSurveyType || 'emotion';
-    const calculateLevel = (pts: number) => Math.floor(pts / 10);
-    const levelNum = calculateLevel(userPoints);
-    
-    const getRankInfo = (pts: number) => {
-        let levelIndex = Math.floor(pts / 10);
-        if (levelIndex >= 10) levelIndex = 9;
-        if (levelIndex < 0) levelIndex = 0;
-        return RANK_SYSTEM.emotion[levelIndex];
-    };
-    
-    const currentRank = getRankInfo(userPoints);
 
     const handleBuyItem = async (
         type: 'seed' | 'pet' | 'essence_lam' | 'essence_tim' | 'essence_vang' | 'essence_cam',
@@ -343,53 +310,9 @@ export default function ShopGlobal() {
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center animate-in fade-in duration-300 pointer-events-auto">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsShopOpen(false)} />
 
-                    <div className="relative bg-[#0f172a]/90 backdrop-blur-3xl border border-white/20 w-[900px] max-w-[95vw] h-[600px] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-                        
-                        {/* HEADER PROFILE */}
-                        <div className="bg-black/50 border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full border-2 border-pink-400 overflow-hidden shadow-[0_0_8px_rgba(244,114,182,0.4)]">
-                                    <img src={firebaseUser?.photoURL || '/logo.png'} alt="Avatar" className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-white text-sm font-black uppercase tracking-wider">{activeData.username || 'Lữ Khách'}</span>
-                                    <span className={`${currentRank.color} text-xs font-bold uppercase opacity-90`}>{currentRank.name}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
-                                    <span className="text-yellow-400 font-bold">{moneyCount.toLocaleString()}</span>
-                                    <span>💰</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                                    <span className="text-green-400 font-bold">{seedCount}</span>
-                                    <span>🌱</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
-                                    <span className="text-emerald-400 font-bold">{leavesCount}</span>
-                                    <span>🍃</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-2 py-1">
-                                    <img src="/vuonhoa/tinhhoa/tinhhoalam.png" className="w-4 h-4 rounded-full" />
-                                    <span className="text-blue-400 font-bold text-xs">{essences.lam}</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-2 py-1">
-                                    <img src="/vuonhoa/tinhhoa/tinhhoatim.png" className="w-4 h-4 rounded-full" />
-                                    <span className="text-purple-400 font-bold text-xs">{essences.tim}</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-2 py-1">
-                                    <img src="/vuonhoa/tinhhoa/tinhhoavang.png" className="w-4 h-4 rounded-full" />
-                                    <span className="text-yellow-300 font-bold text-xs">{essences.vang}</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-2 py-1">
-                                    <img src="/vuonhoa/tinhhoa/tinhhoacam.png" className="w-4 h-4 rounded-full" />
-                                    <span className="text-orange-400 font-bold text-xs">{essences.cam}</span>
-                                </div>
-                            </div>
-                        </div>
-
+                    <div className="relative bg-[#0f172a]/90 backdrop-blur-3xl border border-white/20 w-[900px] max-w-[95vw] h-[600px] rounded-[2rem] shadow-2xl flex overflow-hidden animate-in zoom-in-95 duration-300">
                         {/* CỘT TRÁI - MENU */}
-                        <div className="flex-1 flex overflow-hidden">
+                        <div className="flex w-full overflow-hidden">
                             <div className="w-1/3 bg-black/40 border-r border-white/10 p-6 flex flex-col">
                             <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-widest bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">CỬA HÀNG</h2>
 
