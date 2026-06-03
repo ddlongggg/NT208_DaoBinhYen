@@ -452,6 +452,8 @@ export default function DailyCheckinPage() {
     playClickSound();
     const { action, actionParams } = scene;
 
+    console.log('🔍 Daily-checkin handleAction - action:', action);
+
     if (action === 'force_full_survey') {
       router.push('/survey');
     } else if (action === 'go_to_full_survey') {
@@ -466,8 +468,14 @@ export default function DailyCheckinPage() {
           });
         } catch (e) { }
       }
+      // 🔥 Small delay to ensure cookie is set before middleware checks
+      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log('🔍 Daily-checkin handleAction - pushing to /homepage (read_and_go)');
       router.push('/homepage');
     } else if (action === 'direct_go') {
+      // 🔥 Small delay to ensure cookie is set before middleware checks
+      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log('🔍 Daily-checkin handleAction - pushing to /homepage (direct_go)');
       router.push('/homepage');
     }
   };

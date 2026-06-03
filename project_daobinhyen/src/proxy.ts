@@ -48,15 +48,19 @@ export function proxy(request: NextRequest) {
     if (session) {
         const onboardingStep = request.cookies.get(ONBOARDING_COOKIE)?.value;
 
+        console.log(`🔍 [MIDDLEWARE] pathname: ${pathname}, onboardingStep: ${onboardingStep}`);
+
         if (!onboardingStep) {
             const isRequiredFlowPage = pathname === '/survey' || pathname === '/daily-checkin';
 
             if (!isRequiredFlowPage) {
+                console.log(`🔍 [MIDDLEWARE] No onboardingStep, redirecting to /survey`);
                 return NextResponse.redirect(new URL('/survey', request.url));
             }
         }
 
         if (onboardingStep === 'survey' && pathname !== '/survey') {
+            console.log(`🔍 [MIDDLEWARE] onboardingStep=survey, redirecting to /survey`);
             return NextResponse.redirect(new URL('/survey', request.url));
         }
 
@@ -65,8 +69,18 @@ export function proxy(request: NextRequest) {
             const isForcedSurvey = pathname === '/survey' && !!searchParams.get('topic');
 
             if (!isDailyPage && !isForcedSurvey) {
+                console.log(`🔍 [MIDDLEWARE] onboardingStep=daily, not daily page, redirecting to /daily-checkin`);
                 return NextResponse.redirect(new URL('/daily-checkin', request.url));
             }
+        }
+
+        // 🔥 Allow access to any app route if onboarding is 'done'
+        if (onboardingStep === 'done') {
+            console.log(`🔍 [MIDDLEWARE] onboardingStep=done, allowing path: ${pathname}`);
+            if (!appRoutes.has(pathname)) {
+                return NextResponse.redirect(new URL('/homepage', request.url));
+            }
+            return NextResponse.next();
         }
 
         if (!appRoutes.has(pathname)) {

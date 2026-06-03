@@ -44,11 +44,15 @@ export async function POST(req: NextRequest) {
     // 5. Update vào Firestore
     await userRef.update(updateData);
 
+    console.log('✅ Daily-checkin API - Updated user data:', updateData);
+
     // 6. Trả về thành công (kèm streak mới để client cập nhật UI)
     const response = NextResponse.json({ 
       message: 'Cập nhật tiến độ Check-in thành công!', 
       data: { ...updateData, topicStreak: newStreak }
     }, { status: 200 });
+    
+    console.log('✅ Daily-checkin API - Setting cookie to "done"');
     response.cookies.set(ONBOARDING_COOKIE, 'done', ONBOARDING_COOKIE_OPTIONS);
 
     return response;
