@@ -399,12 +399,7 @@ const toggleMusic = async (type: 'lofi' | 'fm' , isNext: boolean = false, trackU
 
         {/* Nút chỉnh âm lượng - Đưa ra giữa, nằm ngang */}
 
-        {/* Status Bar - Đẩy qua góc dưới bên trái, tăng kích thước để che logo Gemini */}
-        <div className="absolute bottom-2 left-2 z-10 px-10 py-8 bg-black/90 text-white/60 rounded-[2rem] border border-white/5 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
-          <p className="text-[11px] font-black tracking-[0.4em] uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
-            {session} mode
-          </p>
-        </div>
+
       </div>
   );
 };
