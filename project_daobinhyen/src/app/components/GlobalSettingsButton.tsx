@@ -19,5 +19,5 @@ export default function GlobalSettingsButton() {
 
   if (shouldHide) return null;
 
-  return <SettingsButton />;
+  return <SettingsButton className={pathname === '/thucung' ? 'fixed top-6 right-6 z-[9999]' : undefined} />;
 }

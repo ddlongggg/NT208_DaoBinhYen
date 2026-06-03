@@ -183,6 +183,11 @@ export default function PetSanctuary() {
     const [showBubble, setShowBubble] = useState(false);
     const [bubbleText, setBubbleText] = useState('');
     const [quotes, setQuotes] = useState<string[]>([]);
+    const [messageBox, setMessageBox] = useState({ isOpen: false, message: '' });
+
+    const showMessageBox = (message: string) => {
+        setMessageBox({ isOpen: true, message });
+    };
 
     const myPetsRef = useRef<PetData[]>([]);
     useEffect(() => {
@@ -330,12 +335,12 @@ export default function PetSanctuary() {
         let newLastPetted = selectedPet.lastPetted;
 
         if (action === 'feed') {
-            if (newHunger >= 100) { alert('Bé đang no, không ăn thêm được nữa!'); return; }
+            if (newHunger >= 100) { showMessageBox('Bé đang no, không ăn thêm được nữa!'); return; }
             newHunger = Math.min(100, newHunger + 20);
             newXp += 10;
         }
         else if (action === 'water') {
-            if (newThirst >= 100) { alert('Bé không khát nước lúc này!'); return; }
+            if (newThirst >= 100) { showMessageBox('Bé không khát nước lúc này!'); return; }
             newThirst = Math.min(100, newThirst + 20);
             newXp += 10;
         }
@@ -349,7 +354,7 @@ export default function PetSanctuary() {
         if (newXp >= reqXp) {
             newLevel += 1;
             newXp -= reqXp;
-            alert(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
+            showMessageBox(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
         }
 
         const updatedPet = { ...selectedPet, hunger: newHunger, thirst: newThirst, xp: newXp, level: newLevel, lastPetted: newLastPetted };
@@ -383,11 +388,11 @@ export default function PetSanctuary() {
 
         // 1. Kiểm tra điều kiện bằng TIỀN THẬT (moneyCount)
         if (moneyCount < food.price) {
-            alert('Bạn không đủ tiền để mua món này!');
+            showMessageBox('Bạn không đủ tiền để mua món này!');
             return;
         }
         if (selectedPet.hunger >= 100) {
-            alert('Bé đang no, không ăn thêm được nữa đâu!');
+            showMessageBox('Bé đang no, không ăn thêm được nữa đâu!');
             return;
         }
 
@@ -417,7 +422,7 @@ export default function PetSanctuary() {
         if (newXp >= reqXp) {
             newLevel += 1;
             newXp -= reqXp;
-            alert(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
+            showMessageBox(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
         }
 
         const updatedPet = { ...selectedPet, hunger: newHunger, thirst: newThirst, xp: newXp, level: newLevel, lastPetted: newLastPetted };
@@ -450,11 +455,11 @@ export default function PetSanctuary() {
 
         // 1. Kiểm tra điều kiện bằng TIỀN THẬT
         if (moneyCount < drink.price) {
-            alert('Bạn không đủ tiền để mua thức uống này!');
+            showMessageBox('Bạn không đủ tiền để mua thức uống này!');
             return;
         }
         if (selectedPet.thirst >= 100) {
-            alert('Bé không khát nước lúc này!');
+            showMessageBox('Bé không khát nước lúc này!');
             return;
         }
 
@@ -484,7 +489,7 @@ export default function PetSanctuary() {
         if (newXp >= reqXp) {
             newLevel += 1;
             newXp -= reqXp;
-            alert(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
+            showMessageBox(`🎉 Chúc mừng! ${selectedPet.name} đã thăng cấp lên Level ${newLevel}!`);
         }
 
         const updatedPet = { ...selectedPet, hunger: newHunger, thirst: newThirst, xp: newXp, level: newLevel, lastPetted: newLastPetted };
@@ -585,7 +590,7 @@ export default function PetSanctuary() {
                 </Link>
             )}
 
-            <button onClick={() => setShowGuide(true)} className="absolute top-6 right-6 z-50 px-5 py-2.5 bg-blue-500/30 backdrop-blur-md border border-blue-400/50 rounded-full text-blue-200 font-bold hover:bg-blue-500/50 transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+            <button onClick={() => setShowGuide(true)} className="absolute top-6 right-20 z-50 px-5 py-2.5 bg-blue-500/30 backdrop-blur-md border border-blue-400/50 rounded-full text-blue-200 font-bold hover:bg-blue-500/50 transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                 📖 Sổ Tay Chăm Sóc
             </button>
 
@@ -957,6 +962,18 @@ export default function PetSanctuary() {
                             </div>
                         </div>
                     )}
+                    <Link
+                        href="/homepage"
+                        className="absolute bottom-8 right-[15.5rem] z-50 group flex h-12 w-36 items-center justify-center font-sans animate-in slide-in-from-right-10 duration-700"
+                    >
+                        <div className="absolute pointer-events-none animate-pulse">
+                            <span className="text-white/60 font-semibold text-lg tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] whitespace-nowrap">LỐI RA</span>
+                        </div>
+                        <div className="absolute top-[-45px] left-1/2 -translate-x-1/2 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none text-center">
+                            <h3 className="text-white font-bold text-sm whitespace-nowrap">Rời khỏi khu thú cưng</h3>
+                        </div>
+                    </Link>
+
                     {/* NÚT ĐỔI THÚ CƯNG - GÓC PHẢI BÊN DƯỚI */}
                     <button
                         onClick={() => setShowPetMenu(true)}
@@ -1024,6 +1041,31 @@ export default function PetSanctuary() {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* HỘP THÔNG BÁO */}
+            {messageBox.isOpen && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center animate-in fade-in duration-300">
+                    <button
+                        aria-label="Đóng thông báo"
+                        onClick={() => setMessageBox({ isOpen: false, message: '' })}
+                        className="absolute inset-0 bg-black/55 backdrop-blur-sm cursor-default"
+                    />
+                    <div className="relative w-[min(90vw,420px)] overflow-hidden rounded-3xl border border-white/20 bg-slate-950/90 p-7 text-center shadow-[0_0_45px_rgba(236,72,153,0.35)] animate-in zoom-in-95 duration-300">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-pink-300/40 bg-pink-500/20 text-3xl shadow-[0_0_24px_rgba(236,72,153,0.35)]">
+                            🐾
+                        </div>
+                        <p className="text-white text-lg font-black leading-relaxed whitespace-pre-line">
+                            {messageBox.message}
+                        </p>
+                        <button
+                            onClick={() => setMessageBox({ isOpen: false, message: '' })}
+                            className="mt-6 rounded-full border border-white/20 bg-white/10 px-7 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-[0_0_18px_rgba(255,255,255,0.18)]"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* BẢNG HƯỚNG DẪN */}
