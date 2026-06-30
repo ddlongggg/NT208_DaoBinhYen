@@ -1,5 +1,14 @@
 #  Đảo Bình Yên
 
+## Bảng phân công công việc
+
+| Họ và tên | MSSV | Đóng góp |
+|---|---|---|
+| Tạ Đức Long | 24521013 | 25% |
+| Trần Thành Luân | 24521031 | 25% |
+| Lâm Quang Minh | 24521057 | 25% |
+| Tống Khí Đức Anh | 24520127 | 25% |
+
 > *Một hòn đảo ảo nơi bạn chăm sóc tinh thần mỗi ngày.*
 
 **Đảo Bình Yên** là ứng dụng web tương tác hướng đến sức khỏe tinh thần, kết hợp cơ chế gamification để khuyến khích người dùng ghi nhận cảm xúc và quay lại mỗi ngày. Thay vì một bảng chức năng thông thường, người dùng được đặt chân lên một hòn đảo ảo với nhiều khu vực khác nhau — mỗi khu vực mang một trải nghiệm riêng biệt.
@@ -231,3 +240,7 @@ Middleware (`proxy.ts`) kiểm soát quyền truy cập dựa trên cookie phiê
 Dự án được phát triển cho mục đích học thuật.
 
 ---
+
+<div align="center">
+  <h1>🚀 <b>Chúng em đã biết làm web và hiểu hệ thống web hoạt động như thế nào.</b> 🚀</h1>
+</div>
