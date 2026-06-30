@@ -9,6 +9,8 @@
 | Lâm Quang Minh | 24521057 | 25% |
 | Tống Khí Đức Anh | 24520127 | 25% |
 
+**🎥 [Video Demo Dự án](https://drive.google.com/drive/u/0/folders/1I960eT-PF7hK1ioxYdkA2dDcgNcdvr-G)**
+
 > *Một hòn đảo ảo nơi bạn chăm sóc tinh thần mỗi ngày.*
 
 **Đảo Bình Yên** là ứng dụng web tương tác hướng đến sức khỏe tinh thần, kết hợp cơ chế gamification để khuyến khích người dùng ghi nhận cảm xúc và quay lại mỗi ngày. Thay vì một bảng chức năng thông thường, người dùng được đặt chân lên một hòn đảo ảo với nhiều khu vực khác nhau — mỗi khu vực mang một trải nghiệm riêng biệt.
